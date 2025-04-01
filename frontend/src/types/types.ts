@@ -5,23 +5,31 @@ export type User = {
   title: string,
 }
 
+export type Details = {
+  amount: number, 
+  food: Food,
+}
+
+
 export type Order = {
+  id: number,
   rid: number | string, 
   did: number | string,
   deskName: string, 
   customCount: number,
-  details: string,
-  status: string,
+  status: 'pending' | 'completed' | 'confirmed',
   timestamp: string,
   totalPrice: number,
+  details: Details[],
 }
 
 export type Food = {
+  id: number,
   rid: number | string, 
   name: string, 
   desc: string, 
   price: number, 
   img: string, 
   category: string,
-  status: string,
+  status: 'on' | 'off',
 }

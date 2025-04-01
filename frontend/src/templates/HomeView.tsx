@@ -8,19 +8,20 @@ import { type User } from "../types/types.ts";
 
 const Loading: React.FC = () => <Skeleton active />;
 // console.log('登录状态： ', isLoginAtom)
-export default function HomeView() {
+
+export default function Test() {
   const [isLogin] = useAtom(isLoginAtom);
   const navigate = useNavigate();
   const [userinfo, setUserinfo] = useState<null | User>(null);
-  const [selectedTab, setSelectedTab] = useState<string>('orders')
+  const [selectedTab, setSelectedTab] = useState<string>("orders");
 
   const getTabClass = (tabName: string) => {
     if (tabName === selectedTab) {
-      return 'my-[5px] h-[40px] flex bg-[#fae158] items-center border rounded border-[#f9f9f9] px-[20px] font-bold'
+      return "my-[5px] h-[40px] flex bg-[#fae158] items-center border rounded border-[#f9f9f9] px-[20px] font-bold";
     } else {
-      return 'my-[5px] h-[40px] flex bg-white items-center border rounded border-[#f9f9f9] px-[20px] font-bold'
+      return "my-[5px] h-[40px] flex bg-white items-center border rounded border-[#f9f9f9] px-[20px] font-bold";
     }
-  }
+  };
 
   useEffect(() => {
     axios.get("/api/userinfo").then((res) => {
@@ -41,48 +42,50 @@ export default function HomeView() {
   }
 
   return (
-    <>
-      <div className="flex flex-col bg-[#fae158] ">
-        <div
-          data-class="餐厅名称"
-          className="relative h-12 text-2xl flex justify-center items-center font-bold flex-none"
-        >
-          {userinfo?.title}
-          <button className="absolute right-[15px] font-normal text-[20px] bg-white rounded-[10px] px-[10px] py-[2px]">
+    <div>
+      <div className="fixed w-full">
+        <div className=" bg-[#fae158] h-12 text-2xl font-bold flex items-center justify-center relative">
+          <span className="">{userinfo?.title}</span>
+          <span className="absolute right-[15px] font-normal bg-white px-[10px] py-[2px] text-[18px] rounded-[10px]">
             退出
-          </button>
+          </span>
         </div>
-        <div className="flex flex-1 bg-[#f9f9f9] rounded-[20px]">
-          <div className="flex-1">
-            <div className="flex justify-around">
-              <Link
-                onClick={() => {setSelectedTab('orders')}}
-                className={getTabClass('orders')}
-                to="orders"
-              >
-                订单管理
-              </Link>
-              <Link
-                onClick={() => {setSelectedTab('foods')}}
-                className={getTabClass('foods')}
-                to="foods"
-              >
-                菜品管理
-              </Link>
-              <Link
-                onClick={() => {setSelectedTab('desks')}}
-                className={getTabClass('desks')}
-                to="desks"
-              >
-                桌面管理
-              </Link>
-            </div>
-            <Suspense fallback={<Loading />}>
-              <Outlet />
-            </Suspense>
-          </div>
+        <div className="flex justify-around items-center bg-[#f9f9f9]">
+          <Link
+            to="orders"
+            onClick={() => {
+              setSelectedTab("orders");
+            }}
+            className={getTabClass("orders")}
+          >
+            订单管理
+          </Link>
+          <Link
+            to="foods"
+            onClick={() => {
+              setSelectedTab("foods");
+            }}
+            className={getTabClass("foods")}
+          >
+            菜品管理
+          </Link>
+          <Link
+            to="desks"
+            onClick={() => {
+              setSelectedTab("desks");
+            }}
+            className={getTabClass("desks")}
+          >
+            桌面管理
+          </Link>
         </div>
       </div>
-    </>
+
+      <div className="pt-[100px]">
+        <Suspense fallback={<Loading/>}>
+          <Outlet/>
+        </Suspense>
+      </div>
+    </div>
   );
 }

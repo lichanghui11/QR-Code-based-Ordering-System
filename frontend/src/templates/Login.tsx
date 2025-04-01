@@ -5,6 +5,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from "axios";
 import { isLoginAtom } from "../store/store";
 import { useAtom } from "jotai";
+import { userAtom } from '../store/store.tsx'
+import { type User } from '../types/types.ts'
 
 
 type LoginUser = {
@@ -14,11 +16,12 @@ type LoginUser = {
 const Login: React.FC = () => {
   const navigate = useNavigate()
   const [, setIsLogin] = useAtom(isLoginAtom)
+  const [, setUser] = useAtom(userAtom)
 
   const onFinish = async (values: LoginUser) => {
-    console.log("Received values of form: ", values);
+    // console.log("Received values of form: ", values);
     //make a request here
-    let res;
+    let res: {data: User};
     try {
       res = await axios.post('/api/login', {
         name: values.name, 
@@ -31,8 +34,11 @@ const Login: React.FC = () => {
        *   title: 'KFC', //title为餐厅名称
        * }
        */
-      console.log('登录返回的结果: ', res.data)
+      // console.log('登录返回的结果: ', res.data)
+
+      setUser(() => res.data)
       setIsLogin(true)
+
       navigate('/home')
     } catch (e: unknown) {
       if (axios.isAxiosError(e)) {
