@@ -1,4 +1,5 @@
 export type User = {
+  //这里相当于是某个餐厅的信息
   id: number,
   name: string, 
   title: string,
