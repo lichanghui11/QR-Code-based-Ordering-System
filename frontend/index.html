@@ -1,10 +1,24 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vite + React + TS</title>
+    <style>
+      /* 全局调试样式 */
+      z* {
+        /* 添加一个半透明的边框 */
+        outline: 1px dashed rgba(255, 0, 0, 0.5);
+
+        /* 添加一个轻微的阴影来增强效果 */
+        box-shadow: 0 0 5px rgba(0, 0, 255, 0.3);
+
+        /* 为了防止部分元素因为继承或重置样式导致不显示，可以增加 !important */
+        outline: 1px dashed rgba(229, 185, 185, 0.5) !important;
+        box-shadow: 0 0 5px rgba(0, 0, 255, 0.3) !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
