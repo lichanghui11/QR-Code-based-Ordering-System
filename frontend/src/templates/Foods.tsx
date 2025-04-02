@@ -17,6 +17,9 @@ class FoodManager {
   setFoodStatus(idx: number, status: "on" | "off") {
     this.foods[idx].status = status;
   }
+  deleteFood(idx: number) {
+    this.foods.splice(idx, 1)
+  }
 }
 
 const Foods = observer(() => {
@@ -83,6 +86,12 @@ async function handleConfirm() {
   setEditing(false)
 }
 
+    async function handleDelete(food: Food, idx: number) {
+      const res = await axios.delete('/api/restaurant/1/food/' + food.id)
+      console.log('deleting a food: ', res.data)
+      //这里请求回来的是已经删除了的菜品
+      foodManager.deleteFood(idx)
+    }
 
     const list = async (idx: number) => {
       await axios
@@ -180,7 +189,7 @@ async function handleConfirm() {
             修改
           </button>
 
-          <button className="bg-[#fae158] px-2">删除</button>
+          <button onClick={() => handleDelete(food, idx)} className="bg-[#fae158] px-2">删除</button>
         </div>
       </li>
     );
