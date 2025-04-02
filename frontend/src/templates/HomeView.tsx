@@ -1,12 +1,12 @@
 import { Suspense, useEffect, useState } from "react";
 import { Link, Outlet, useNavigate } from "react-router-dom";
-import { Skeleton } from "antd";
+// import { Skeleton } from "antd";
 import { useAtom } from "jotai";
 import { isLoginAtom } from "../store/store";
 import axios from "axios";
 import { type User } from "../types/types.ts";
 
-const Loading: React.FC = () => <Skeleton active />;
+// const Loading: React.FC = () => <Skeleton active />;
 // console.log('登录状态： ', isLoginAtom)
 export default function Test() {
   const [isLogin] = useAtom(isLoginAtom);

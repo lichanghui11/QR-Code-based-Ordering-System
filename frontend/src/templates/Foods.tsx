@@ -1,9 +1,10 @@
 import { makeAutoObservable } from "mobx";
 import { type Food } from "../types/types.ts";
 import { observer } from "mobx-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router";
+import { useInput } from "../hooks/hooks.ts";
 
 class FoodManager {
   foods: Food[] = [];
@@ -13,8 +14,8 @@ class FoodManager {
   addFood(...foods: Food[]) {
     this.foods.push(...foods);
   }
-  setFoodStatus(idx: number, status: 'on' | 'off') {
-    this.foods[idx].status = status
+  setFoodStatus(idx: number, status: "on" | "off") {
+    this.foods[idx].status = status;
   }
 }
 
@@ -32,73 +33,158 @@ const Foods = observer(() => {
     return () => {
       isLoaded = true;
     };
-  }, [location]);
-
-
-  const list = async (idx: number) => {
-    await axios.put('/api/restaurant/1/food/' + foodManager.foods[idx].id, {
-      status: 'on'
-    }).then(res => {
-      console.log('after list an item : ', res.data)
-    })
-    foodManager.setFoodStatus(idx, 'on')
-  }
-
-  const delist = async (idx: number) => {
-    await axios.put('/api/restaurant/1/food/' + foodManager.foods[idx].id, {
-      status: 'off'
-    })
-    foodManager.setFoodStatus(idx, 'off')
-  }
+  }, []);
 
   return (
     <>
-        <div className="mx-2 text-center bg-[#fae158] py-2 rounded">
-          <Link to="/home/add-food">添加菜品</Link>
-        </div>
+      <div className="mx-2 text-center bg-[#fae158] py-2 rounded">
+        <Link to="/home/add-food">添加菜品</Link>
+      </div>
       <ul className="columns-2 md:columns-3 gap-4 px-2 bg-[#f9f9f9]">
         {foodManager.foods.map((food, idx) => {
-          return (
-            <li
-              key={food.id}
-              className="bg-white rounded-lg shadow p-2 flex flex-col break-inside-avoid mb-[4px]"
-            >
-              <div>
-                <img
-                  src={"http://192.168.3.11:5173/upload/" + food.img}
-                  className="rounded"
-                />
-
-                <span className="text-[#6f3713] font-bold text-[18px]">
-                  {food.name}
-                </span>
-                <span className="border-l-[1px] border-[#7f7f7e] pr-1 ml-[4px] inline-block h-[10px]"></span>
-                <span className="text-[14px] ">{food.category}</span>
-                <p className="text-[12px]">{food.desc}</p>
-
-                <span className="flex font-bold">
-                  <span className="text-[#e14f63] text-[12px] flex items-end mr-[2px]">
-                    ¥
-                  </span>
-                  <span className="text-[#e14f63]">{food.price}</span>
-                  <span className="ml-auto">
-                    {food.status === "on" ? "在售" : "已售罄"}
-                  </span>
-                </span>
-              </div>
-
-              <div className="flex justify-around text-[13px] rounded mt-2">
-                {food.status === 'on' && <button onClick={() => delist(idx)} className="bg-[#fae158] px-2">下架</button>}
-                {food.status === 'off' && <button onClick={() => list(idx)} className="bg-[#fae158] px-2">上架</button>}
-                <button className="bg-[#fae158] px-2">修改</button>
-                
-                <button className="bg-[#fae158] px-2">删除</button>
-              </div>
-            </li>
-          );
+          return <FoodItem food={food} idx={idx} foodManager={foodManager} />;
         })}
       </ul>
     </>
   );
 });
+
+type FoodProp = {
+  food: Food;
+  idx: number;
+  foodManager: FoodManager;
+};
+const FoodItem: React.FC<FoodProp> = observer(
+  ({ food, idx, foodManager }: FoodProp) => {
+    const [editing, setEditing] = useState(false);
+
+    const name = useInput(food.name);
+    const price = useInput(String(food.price));
+    const desc = useInput(food.desc);
+    const category = useInput(food.category);
+    const imgRef = useRef<HTMLInputElement | null>(null);
+
+async function handleConfirm() {
+  console.log('in the handle confirm: the name of food', food.name)
+  const formData = new FormData();
+  formData.append("name", name.value);
+  formData.append("price", price.value);
+  formData.append("desc", desc.value);
+  formData.append("category", category.value);
+  if (imgRef!.current!.files) {
+    formData.append("img", imgRef.current!.files![0]);
+  }
+  formData.append("status", "on");
+
+  const res = await axios.put("/api/restaurant/1/food/" + food.id, formData);
+  console.log('after mutate the food: ', res.data)
+  //这个请求会把修改后的菜品信息发送回来
+  foodManager.foods[idx] = res.data
+  setEditing(false)
+}
+
+
+    const list = async (idx: number) => {
+      await axios
+        .put("/api/restaurant/1/food/" + foodManager.foods[idx].id, {
+          status: "on",
+        })
+        .then((res) => {
+          console.log("after list an item : ", res.data);
+        });
+      foodManager.setFoodStatus(idx, "on");
+    };
+
+    const delist = async (idx: number) => {
+      await axios.put("/api/restaurant/1/food/" + foodManager.foods[idx].id, {
+        status: "off",
+      });
+      foodManager.setFoodStatus(idx, "off");
+    };
+
+    if (editing) {
+      return (
+        <>
+          <div className="bg-white rounded-lg shadow p-2 flex flex-col break-inside-avoid mb-[4px]">
+            <div className="mb-[2px]">
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">名称：</span>
+              <input className="border-b border-[#aaf4]" {...name} type="text" />{" "}
+            </div>
+            <div className="mb-[2px]">
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">价格：</span>
+              <input className="border-b border-[#aaf4]" {...price} type="text" />{" "}
+            </div>
+            <div className="mb-[2px]">
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">描述：</span>
+              <input className="border-b border-[#aaf4]" {...desc} type="text" />{" "}
+            </div>
+            <div className="mb-[2px]">
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">分类：</span>
+              <input className="border-b border-[#aaf4]" {...category} type="text" />{" "}
+            </div>
+            <div className="mb-[2px]">
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">上传图片</span>
+              <input className="border-b border-[#aaf4]" ref={imgRef} type="file" />{" "}
+            </div>
+
+            <div className="mt-[5px]">
+              <button className="bg-[#aaf4a3] px-3 py-1 rounded mr-[15px]" onClick={() => handleConfirm()}>确认</button>
+              <button className="bg-[#f2514f] px-3 py-1 rounded" onClick={() => setEditing(false)}>取消</button>
+            </div>
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <li className="bg-white rounded-lg shadow p-2 flex flex-col break-inside-avoid mb-[4px]">
+        <div>
+          <img
+            src={"http://192.168.3.11:5173/upload/" + food.img}
+            className="rounded"
+          />
+
+          <span className="text-[#6f3713] font-bold text-[18px]">
+            {food.name}
+          </span>
+          <span className="border-l-[1px] border-[#7f7f7e] pr-1 ml-[4px] inline-block h-[10px]"></span>
+          <span className="text-[14px] ">{food.category}</span>
+          <p className="text-[12px]">{food.desc}</p>
+
+          <span className="flex font-bold">
+            <span className="text-[#e14f63] text-[12px] flex items-end mr-[2px]">
+              ¥
+            </span>
+            <span className="text-[#e14f63]">{food.price}</span>
+            <span className="ml-auto">
+              {food.status === "on" ? "在售" : "已售罄"}
+            </span>
+          </span>
+        </div>
+
+        <div className="flex justify-around text-[13px] rounded mt-2">
+          {food.status === "on" && (
+            <button onClick={() => delist(idx)} className="bg-[#fae158] px-2">
+              下架
+            </button>
+          )}
+          {food.status === "off" && (
+            <button onClick={() => list(idx)} className="bg-[#fae158] px-2">
+              上架
+            </button>
+          )}
+          <button
+            className="bg-[#fae158] px-2"
+            onClick={() => setEditing(true)}
+          >
+            修改
+          </button>
+
+          <button className="bg-[#fae158] px-2">删除</button>
+        </div>
+      </li>
+    );
+  }
+);
+
 export default Foods;

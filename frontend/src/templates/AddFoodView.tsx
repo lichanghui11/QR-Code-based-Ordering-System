@@ -17,10 +17,10 @@ const AddFoodView = observer(() => {
     e.preventDefault();
 
     const formData = new FormData();
-    formData.append("name", name.input);
-    formData.append("price", price.input);
-    formData.append("desc", desc.input);
-    formData.append("category", category.input);
+    formData.append("name", name.value);
+    formData.append("price", price.value);
+    formData.append("desc", desc.value);
+    formData.append("category", category.value);
     formData.append("img", imgRef.current!.files![0]);
     formData.append("status", 'on');
 
