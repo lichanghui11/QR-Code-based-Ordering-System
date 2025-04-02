@@ -13,6 +13,7 @@ export default defineConfig({
       //   rewrite: (path) => path.replace(/^\/api/, ""),
       // },
       '/api': "http://localhost:5002",
+      '/upload': "http://localhost:5002",
     },
   },
 });

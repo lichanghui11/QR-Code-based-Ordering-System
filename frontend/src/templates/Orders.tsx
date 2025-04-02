@@ -39,7 +39,7 @@ class EachOrders {
 const Orders = observer(() => {
   const [ordersManager] = useState(() => observable(new EachOrders()));
   const user = useAtomValue(userAtom);
-  // console.log('user in the store: ',user)
+  console.log('user in the store: ',user)
 
   //刷新页面后，atom里面的user信息就会丢失，
   //一个方法是将数据存到localStorage
@@ -65,14 +65,14 @@ const Orders = observer(() => {
   }
 
   async function confirmOrder(id: number, idx: number) {
-    await axios.put("/api/restaurant/1/order" + id + "/status", {
+    await axios.put("/api/restaurant/1/order/" + id + "/status", {
       status: "confirmed",
     });
     ordersManager.changeOrderStatus(idx, "confirmed");
   }
 
   async function completeOrder(id: number, idx: number) {
-    await axios.put("/api/restaurant/1/order" + id + "/status", {
+    await axios.put("/api/restaurant/1/order/" + id + "/status", {
       status: "completed",
     });
     ordersManager.changeOrderStatus(idx, "completed");
@@ -87,7 +87,6 @@ const Orders = observer(() => {
               <li key={order.id} className="p-2 rounded mb-4 bg-white  pt-1 ">
                 <div className="flex flex-col">
                   <div className="flex mb-2 h-[200px]">
-
                     <div className="flex flex-col justify-between text-[#555]">
                       <div>ID： {order.did}</div>
                       <div>座位号： {order.deskName}</div>
@@ -99,7 +98,18 @@ const Orders = observer(() => {
                         </span>
                       </div>
                       <div>用餐人数： {order.customCount}</div>
-                      <div>订单状态： <span className="bg-[#aaf4a3] px-[8px] py-[4px] rounded">{order.status === 'pending' ? '待确认订单' : order.status === 'confirmed' ? '已确认订单' : order.status === 'completed' ? '已付款' : ''}</span></div>
+                      <div>
+                        订单状态：{" "}
+                        <span className="bg-[#aaf4a3] px-[8px] py-[4px] rounded">
+                          {order.status === "pending"
+                            ? "待确认订单"
+                            : order.status === "confirmed"
+                            ? "已确认订单"
+                            : order.status === "completed"
+                            ? "已付款"
+                            : ""}
+                        </span>
+                      </div>
                       <div> 下单时间： {formatISOToLocal(order.timestamp)}</div>
                     </div>
 
@@ -129,11 +139,10 @@ const Orders = observer(() => {
                         删除
                       </button>
                     </div>
-
                   </div>
 
                   <ul className="bg-[#fdf4e4] text-[#9f745b] rounded">
-                    {order.details.map((detail, idx) => {
+                    {order.details.map((detail) => {
                       return (
                         <li key={order.id} className="p-2 mb-2">
                           <div>

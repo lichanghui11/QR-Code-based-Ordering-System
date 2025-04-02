@@ -33,3 +33,13 @@ export type Food = {
   category: string,
   status: 'on' | 'off',
 }
+/**
+ * 增加菜品的表单： 
+ * FormData = {
+ *  name, 
+ *  price, 
+ *  desc, 
+ *  category, 
+ *  img: file, 
+ * }
+ */
