@@ -18,7 +18,7 @@ class FoodManager {
     this.foods[idx].status = status;
   }
   deleteFood(idx: number) {
-    this.foods.splice(idx, 1)
+    this.foods.splice(idx, 1);
   }
 }
 
@@ -29,8 +29,9 @@ const Foods = observer(() => {
   useEffect(() => {
     if (!isLoaded) {
       axios.get("/api/restaurant/1/food").then((res) => {
-        console.log("the menu: ", ...res.data);
         foodManager.addFood(...res.data);
+        console.log("the menu: ", ...res.data);
+        console.log("foodManager: ", foodManager.foods);
       });
     }
     return () => {
@@ -67,30 +68,33 @@ const FoodItem: React.FC<FoodProp> = observer(
     const category = useInput(food.category);
     const imgRef = useRef<HTMLInputElement | null>(null);
 
-async function handleConfirm() {
-  console.log('in the handle confirm: the name of food', food.name)
-  const formData = new FormData();
-  formData.append("name", name.value);
-  formData.append("price", price.value);
-  formData.append("desc", desc.value);
-  formData.append("category", category.value);
-  if (imgRef!.current!.files) {
-    formData.append("img", imgRef.current!.files![0]);
-  }
-  formData.append("status", "on");
+    async function handleConfirm() {
+      console.log("in the handle confirm: the name of food", food.name);
+      const formData = new FormData();
+      formData.append("name", name.value);
+      formData.append("price", price.value);
+      formData.append("desc", desc.value);
+      formData.append("category", category.value);
+      if (imgRef!.current!.files) {
+        formData.append("img", imgRef.current!.files![0]);
+      }
+      formData.append("status", "on");
 
-  const res = await axios.put("/api/restaurant/1/food/" + food.id, formData);
-  console.log('after mutate the food: ', res.data)
-  //这个请求会把修改后的菜品信息发送回来
-  foodManager.foods[idx] = res.data
-  setEditing(false)
-}
+      const res = await axios.put(
+        "/api/restaurant/1/food/" + food.id,
+        formData
+      );
+      console.log("after mutate the food: ", res.data);
+      //这个请求会把修改后的菜品信息发送回来
+      foodManager.foods[idx] = res.data;
+      setEditing(false);
+    }
 
     async function handleDelete(food: Food, idx: number) {
-      const res = await axios.delete('/api/restaurant/1/food/' + food.id)
-      console.log('deleting a food: ', res.data)
+      const res = await axios.delete("/api/restaurant/1/food/" + food.id);
+      console.log("deleting a food: ", res.data);
       //这里请求回来的是已经删除了的菜品
-      foodManager.deleteFood(idx)
+      foodManager.deleteFood(idx);
     }
 
     const list = async (idx: number) => {
@@ -116,29 +120,69 @@ async function handleConfirm() {
         <>
           <div className="bg-white rounded-lg shadow p-2 flex flex-col break-inside-avoid mb-[4px]">
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">名称：</span>
-              <input className="border-b border-[#aaf4]" {...name} type="text" />{" "}
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+                名称：
+              </span>
+              <input
+                className="border-b border-[#aaf4]"
+                {...name}
+                type="text"
+              />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">价格：</span>
-              <input className="border-b border-[#aaf4]" {...price} type="text" />{" "}
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+                价格：
+              </span>
+              <input
+                className="border-b border-[#aaf4]"
+                {...price}
+                type="text"
+              />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">描述：</span>
-              <input className="border-b border-[#aaf4]" {...desc} type="text" />{" "}
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+                描述：
+              </span>
+              <input
+                className="border-b border-[#aaf4]"
+                {...desc}
+                type="text"
+              />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">分类：</span>
-              <input className="border-b border-[#aaf4]" {...category} type="text" />{" "}
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+                分类：
+              </span>
+              <input
+                className="border-b border-[#aaf4]"
+                {...category}
+                type="text"
+              />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">上传图片</span>
-              <input className="border-b border-[#aaf4]" ref={imgRef} type="file" />{" "}
+              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+                上传图片
+              </span>
+              <input
+                className="border-b border-[#aaf4]"
+                ref={imgRef}
+                type="file"
+              />{" "}
             </div>
 
             <div className="mt-[5px]">
-              <button className="bg-[#aaf4a3] px-3 py-1 rounded mr-[15px]" onClick={() => handleConfirm()}>确认</button>
-              <button className="bg-[#f2514f] px-3 py-1 rounded" onClick={() => setEditing(false)}>取消</button>
+              <button
+                className="bg-[#aaf4a3] px-3 py-1 rounded mr-[15px]"
+                onClick={() => handleConfirm()}
+              >
+                确认
+              </button>
+              <button
+                className="bg-[#f2514f] px-3 py-1 rounded"
+                onClick={() => setEditing(false)}
+              >
+                取消
+              </button>
             </div>
           </div>
         </>
@@ -189,7 +233,12 @@ async function handleConfirm() {
             修改
           </button>
 
-          <button onClick={() => handleDelete(food, idx)} className="bg-[#fae158] px-2">删除</button>
+          <button
+            onClick={() => handleDelete(food, idx)}
+            className="bg-[#fae158] px-2"
+          >
+            删除
+          </button>
         </div>
       </li>
     );

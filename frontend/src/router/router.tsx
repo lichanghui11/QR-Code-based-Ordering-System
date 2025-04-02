@@ -8,6 +8,7 @@ const Desks = React.lazy(() => import('../templates/Desks.tsx'))
 const Register = React.lazy(() => import('../templates/Register.tsx')) 
 const Login = React.lazy(() => import('../templates/Login.tsx'))
 const AddFoodView = React.lazy(() => import('../templates/AddFoodView.tsx'))
+const AddDeskView = React.lazy(() => import('../templates/AddDeskView.tsx'))
 
 
 
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
       {
         path: 'add-food', 
         element: <AddFoodView />
+      },
+      {
+        path: 'add-desk', 
+        element: <AddDeskView />
       },
     ]
   }, 

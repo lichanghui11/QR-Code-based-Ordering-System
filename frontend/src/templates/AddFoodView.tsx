@@ -12,6 +12,7 @@ const AddFoodView = observer(() => {
   const desc = useInput('')
   const category = useInput('')
   const navigator = useNavigate()
+  
 
    function addFood(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     e.preventDefault();
@@ -24,9 +25,8 @@ const AddFoodView = observer(() => {
     formData.append("img", imgRef.current!.files![0]);
     formData.append("status", 'on');
 
-
      axios.post("/api/restaurant/1/food/", formData).then((res) => {
-      console.log("add a food: ", res.data);
+       console.log("add a food: ", res.data);
       navigator('/home/foods')
     });
   }

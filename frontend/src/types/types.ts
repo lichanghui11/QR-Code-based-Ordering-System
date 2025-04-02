@@ -33,6 +33,13 @@ export type Food = {
   category: string,
   status: 'on' | 'off',
 }
+
+export type Desk = {
+  name: string;
+  capacity: number;
+  id: number,
+};
+
 /**
  * 增加菜品的表单： 
  * FormData = {
