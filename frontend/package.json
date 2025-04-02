@@ -11,9 +11,14 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.17",
+    "@types/pretty-data": "^0.40.3",
     "antd": "^5.24.5",
+    "mobx": "^6.13.7",
+    "mobx-react-lite": "^4.1.0",
+    "pretty-data": "^0.40.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-to-print": "^3.0.5",
     "tailwindcss": "^4.0.17"
   },
   "devDependencies": {

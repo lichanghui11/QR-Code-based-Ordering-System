@@ -44,13 +44,15 @@ export default function Test() {
   return (
     <div>
       <div className="fixed w-full">
+        <div className="bg-[#fae158]">
+
         <div className=" bg-[#fae158] h-12 text-2xl font-bold flex items-center justify-center relative">
           <span className="">{userinfo?.title}</span>
           <span className="absolute right-[15px] font-normal bg-white px-[10px] py-[2px] text-[18px] rounded-[10px]">
             退出
           </span>
         </div>
-        <div className="flex justify-around items-center bg-[#f9f9f9]">
+        <div className="flex justify-around items-center bg-[#f9f9f9] rounded-t-2xl">
           <Link
             to="orders"
             onClick={() => {
@@ -80,6 +82,7 @@ export default function Test() {
           </Link>
         </div>
       </div>
+        </div>
 
       <div className="pt-[100px]">
         <Suspense fallback={<Loading/>}>
