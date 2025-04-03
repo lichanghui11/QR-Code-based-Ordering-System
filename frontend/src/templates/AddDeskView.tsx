@@ -10,14 +10,18 @@ export default function AddDeskView() {
   const navigator = useNavigate();
 
   function addDesk() {
-
-    axios.post("/api/restaurant/1/desk/", {
-      name: name.value, 
-      capacity: capacity.value,
-    }).then((res) => {
-      console.log("add a desk: ", res.data);
-      navigator("/home/desks");
-    });
+    if (name.value !== '' && capacity.value !== '') {
+      console.log('the info of desk: ', name.value, capacity.value)
+      axios.post("/api/restaurant/1/desk/", {
+        name: name.value,
+        capacity: capacity.value,
+      }).then((res) => {
+        console.log("add a desk: ", res.data);
+        navigator("/home/desks");
+      });
+    } else {
+      alert('餐桌名称或用餐人数不能为空。')
+    }
 
   }
 
@@ -46,10 +50,10 @@ export default function AddDeskView() {
         </form>
         <div className="px-2 py-1">
           <button
-            onClick={(e) => addDesk(e)}
+            onClick={() => addDesk()}
             className="p-2 bg-[#aaf4a3] px-2 py-1 rounded mr-4"
           >
-            <Link to="/home/desks">确认添加</Link>
+            <Link to="">确认添加</Link>
           </button>
           <button className="p-2 bg-[#f2514f] px-2 py-1 rounded">
             <Link to="/home/desks">取消添加</Link>

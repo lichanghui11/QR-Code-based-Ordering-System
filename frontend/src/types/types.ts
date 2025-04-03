@@ -38,6 +38,7 @@ export type Desk = {
   name: string;
   capacity: number;
   id: number,
+  rid: number,
 };
 
 /**
