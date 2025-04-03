@@ -9,6 +9,8 @@ const Register = React.lazy(() => import('../templates/Register.tsx'))
 const Login = React.lazy(() => import('../templates/Login.tsx'))
 const AddFoodView = React.lazy(() => import('../templates/AddFoodView.tsx'))
 const AddDeskView = React.lazy(() => import('../templates/AddDeskView.tsx'))
+const Landing = React.lazy(() => import('../templates/Landing.tsx'))
+const OrderingPage = React.lazy(() => import('../templates/OrderingPage.tsx'))
 
 
 
@@ -47,14 +49,24 @@ const router = createBrowserRouter([
       },
     ]
   }, 
-  
   {
     path: '/login', 
     element: <Login />,
   }, {
     path: '/register', 
     element: <Register />
-  }
+  },
+
+
+  {
+    path: '/landing/r/:restaurantId/d/:deskId', 
+    element: <Landing />
+  },
+  {
+    path: '/r/:restaurantId/d/:deskId', 
+    element: <OrderingPage />
+  },
+
 ])
 
 export default router

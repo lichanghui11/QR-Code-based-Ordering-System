@@ -6,6 +6,8 @@ import { Link } from "react-router";
 import { useInput } from "../hooks/hooks.ts";
 import { makeAutoObservable } from "mobx";
 import { observer } from "mobx-react";
+import { userAtom } from "../store/store.tsx";
+import { useAtom } from "jotai";
 
 
 
@@ -26,6 +28,8 @@ class DeskManager {
 const Desks = observer( () => {
   const [deskManager] = useState(() => new DeskManager());
   const [qrcodes, setQrcodes] = useState<string[]>([]);
+  const [user] = useAtom(userAtom);
+
 
   useEffect(() => {
     (async () => {
@@ -36,7 +40,7 @@ const Desks = observer( () => {
     const urls = await Promise.all(
       deskManager.desks.map((desk) => {
         return QRCode.toDataURL(
-          "http://192.168.3.11:5173/rest/1/desk/" + desk.id
+          `http://192.168.3.11:5173/r/restaurantId:${user.id}/d/deskId:${desk.id}`
         );
       })
     )
