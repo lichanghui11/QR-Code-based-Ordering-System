@@ -11,6 +11,8 @@ import clsx from 'clsx'
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
 import React from "react";
 import { Drawer } from "antd";
+import { Divider } from "antd";
+import { Empty } from "antd";
 
 function CartIcon() {
   return <ShoppingCartOutlined style={{ fontSize: "24px", color: "#000" }} />;
@@ -28,7 +30,7 @@ export default function OrderingPage() {
   const [user] = useAtom(userAtom);
   const [foodCount, updateFoodCount] = useImmer<number[]>([]);
   //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
-  console.log("the count of foods: ", foodCount);
+  console.log("the count of foods: (foodCount)", foodCount);
 
   const { data, loading } = useRequest(getMenu, {
     defaultParams: [params.restaurantId!],
@@ -143,7 +145,7 @@ export default function OrderingPage() {
 
         <div data-name="购物车抽屉">
           <FoodCart
-            menu={data}
+            menu={data!}
             foodCount={foodCount}
             open={open}
             setOpen={setOpen}
@@ -156,6 +158,7 @@ export default function OrderingPage() {
 }
 
 //计数器组件
+//这个Counter组件是一个受控组件，多个地方使用这个组件使用的是同一个值
 type CounterProp = {
   min: number;
   max: number;
@@ -251,6 +254,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
             borderTopLeftRadius: "16px",
             borderTopRightRadius: "16px",
             overflow: "hidden", // 防止内容溢出显示圆角
+            // marginBottom: '150px',
           },
         }}
       >
@@ -258,7 +262,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
           <div className="text-[12px] bg-[#fef9e5] text-center py-2  rounded-t-[16px] w-full">
             温馨提示：请适量点餐
           </div>
-          <div className="px-4 py-2 flex border-b border-[#f9f9f9] mb-4">
+          <div className="px-4 py-2 flex border-b border-[#f9f9f9]">
             <span className="">已选商品</span>
             <button
               onClick={() => clearCart()}
@@ -274,7 +278,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
           </div>
         </div>
 
-        <div className=" rounded bg-white px-4 mb-16 mt-26 z-1">
+        <div className="食物循环 rounded bg-[#f9f9f9] px-4 pt-26 z-1 mb-[100px]">
           {foodCount
             .map((count, idx) => {
               return {
@@ -289,15 +293,18 @@ const FoodCart: React.FC<FoodCartProp> = ({
               return it;
             })
             .map((it) => (
-              <div key={it.food!.id} className="mb-10 ">
-                <div className="flex gap-2">
+              <div
+                key={it.food!.id}
+                className="mb-[10px] bg-white rounded shadow"
+              >
+                <div className="flex gap-1 shrink-0 items-center">
+                  <input className="px-2" type="checkbox" />
                   <img
                     className="w-30 rounded "
                     src={`/upload/${it.food!.img}`}
                   />
 
                   <div className="mr-auto flex flex-col gap-2">
-
                     <div className="">
                       <span className="font-bold text-[20px] text-[#6f3713]">
                         {it.food!.name}
@@ -316,7 +323,6 @@ const FoodCart: React.FC<FoodCartProp> = ({
                         </span>
                       </span>
                     </div>
-
                   </div>
 
                   <Counter
@@ -329,6 +335,13 @@ const FoodCart: React.FC<FoodCartProp> = ({
                 </div>
               </div>
             ))}
+          {foodCount.filter(it => it > 0).length > 0 ? (
+            <Divider className="!text-[12px] !text-[#9e9e9e]">
+              我是有底线的
+            </Divider>
+          ) : (
+            <Empty description="购物车是空的" />
+          )}
         </div>
       </Drawer>
     </>
