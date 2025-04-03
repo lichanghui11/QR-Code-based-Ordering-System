@@ -5,7 +5,7 @@ import { useAtom } from 'jotai'
 import { userAtom } from '../store/store.tsx'
 import { Skeleton } from "antd"
 import { type Food } from '../types/types.ts'
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useImmer } from 'use-immer'
 import clsx from 'clsx'
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
@@ -24,12 +24,14 @@ function getMenu(restaurantId: number | string): Promise<Food[]> {
   });
 }
 
+
 //整个页面的组件
 export default function OrderingPage() {
   const params = useParams();
   const [user] = useAtom(userAtom);
   const [foodCount, updateFoodCount] = useImmer<number[]>([]);
   //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
+  const [foodSelected, updateFoodSelected] = useImmer<boolean[]>([])
   console.log("the count of foods: (foodCount)", foodCount);
 
   const { data, loading } = useRequest(getMenu, {
@@ -38,6 +40,10 @@ export default function OrderingPage() {
       updateFoodCount((foodCount) => {
         foodCount.push(...Array(data.length).fill(0));
       });
+
+      updateFoodSelected((foodSelected) => {
+        foodSelected.push(...Array(data.length).fill(true))
+      })
     },
   });
 
@@ -51,6 +57,30 @@ export default function OrderingPage() {
 
   const [open, setOpen] = useState(false);
   const toggleDrawer = () => setOpen((open) => !open);
+
+  const selectedFoods = useMemo(() => {
+    return foodCount.map((count, idx) => {
+      return {
+        selected: foodSelected[idx], //每份食物是否被选择
+        count: count, //每份食物的数量
+        food: data![idx]//每份食物的详情
+      }
+    }).filter(it => it.count > 0)
+  }, [data, foodCount, foodSelected])
+  console.log("the select of foods: (selectedFoods)", selectedFoods);
+
+  const setFoodSected = (id: number, selected: boolean) => {
+    updateFoodSelected(foodSelected => {
+      foodSelected[id] = selected
+    })
+  };
+
+  const clearCart = () => {
+    updateFoodCount(draft => {
+      draft.fill(0)
+    })
+  }
+
 
   if (loading) {
     return <Skeleton />;
@@ -107,6 +137,7 @@ export default function OrderingPage() {
           className="z-50 fixed bottom-[20px] bg-[#232426] left-4 rounded-[20px] h-[40px]  right-4"
         >
           <div className="text-white flex justify-between gap-4 ">
+
             <button
               onClick={() => toggleDrawer()}
               className="relative bg-[#fae158] rounded-l-[20px] h-[40px] px-4"
@@ -123,10 +154,10 @@ export default function OrderingPage() {
               <span>
                 <span className="text-[12px] mr-[3px]">¥</span>
                 <span className="font-bold">
-                  {data!
-                    .map((food) => food.price)
-                    .map((price, idx) => {
-                      return price * foodCount[idx];
+                  {selectedFoods
+                    .filter((food) => food.selected)
+                    .map((it) => {
+                      return it.food.price * it.count;
                     })
                     .reduce((a, b) => a + b, 0)}
                 </span>
@@ -150,6 +181,9 @@ export default function OrderingPage() {
             open={open}
             setOpen={setOpen}
             refreshFoodCount={refreshFoodCount}
+            selectedFoods={selectedFoods}
+            setFoodSelected={setFoodSected}
+            clearCart={clearCart}
           />
         </div>
       </div>
@@ -166,7 +200,7 @@ type CounterProp = {
   step: number;
   onChange: (newValue: number) => void;
 };
-export const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
+const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
 
   const inc = () => {
     const diff = Math.min(value + step!, max!)
@@ -219,12 +253,21 @@ export const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
 
 
 //购物车抽屉组件
+type SelectedFood = {
+  count: number, 
+  selected: boolean, 
+  food: Food,
+}
+
 type FoodCartProp = {
   menu: Food[];
   foodCount: number[];
   refreshFoodCount: (current: number, idx: number) => void;
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedFoods: SelectedFood[];
+  setFoodSelected: (id: number, selected: boolean) => void
+  clearCart: () => void
 };
 const FoodCart: React.FC<FoodCartProp> = ({
   menu,
@@ -232,12 +275,27 @@ const FoodCart: React.FC<FoodCartProp> = ({
   refreshFoodCount,
   open,
   setOpen,
+  selectedFoods,
+  setFoodSelected,
+  clearCart,
 }: FoodCartProp) => {
-  function clearCart() {}
 
   const onClose = () => {
     setOpen(false);
   };
+
+  //这里用来设置打开抽屉之后，主屏幕不能滚动
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    // 清理函数，确保卸载后恢复滚动
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
   return (
     <>
@@ -248,14 +306,15 @@ const FoodCart: React.FC<FoodCartProp> = ({
         zIndex={40}
         closable={false} // 取消左上角的叉叉按钮
         className="px-0 rounded-top-[10px]"
-        bodyStyle={{ padding: 0 }}
         styles={{
           content: {
             borderTopLeftRadius: "16px",
             borderTopRightRadius: "16px",
             overflow: "hidden", // 防止内容溢出显示圆角
-            // marginBottom: '150px',
           },
+          body: {
+            padding: 0
+          }
         }}
       >
         <div className="fixed w-full bg-white z-[49]">
@@ -265,13 +324,12 @@ const FoodCart: React.FC<FoodCartProp> = ({
           <div className="px-4 py-2 flex border-b border-[#f9f9f9]">
             <span className="">已选商品</span>
             <button
-              onClick={() => clearCart()}
               className="text-[#8c8c8c] text-[12px] ml-auto cursor-pointer"
             >
               {(foodCount.filter((it) => it > 0).length > 0 && (
                   <DeleteOutlined />
                 ) &&
-                "清空购物车") || (
+              <span onClick={() => clearCart()}>清空购物车</span>  ) || (
                 <span className="text-[#e14f63]">购物车是空的</span>
               )}
             </button>
@@ -292,13 +350,13 @@ const FoodCart: React.FC<FoodCartProp> = ({
               it.food = menu[it.idx];
               return it;
             })
-            .map((it) => (
+            .map((it, id) => (
               <div
                 key={it.food!.id}
                 className="mb-[10px] bg-white rounded shadow"
               >
                 <div className="flex gap-1 shrink-0 items-center">
-                  <input className="px-2" type="checkbox" />
+                  <input className="px-2" type="checkbox" checked={selectedFoods[id].selected} onChange={(e) => setFoodSelected(it.idx, e.target.checked)}/>
                   <img
                     className="w-30 rounded "
                     src={`/upload/${it.food!.img}`}
