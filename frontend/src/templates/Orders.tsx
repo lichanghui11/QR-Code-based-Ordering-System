@@ -131,7 +131,7 @@ const Orders = observer(() => {
       <ul className="relative px-4 bg-[#f9f9f9]">
         <audio src="/new-order-sound.mp3" ref={audioRef}></audio>
         {!audioEnabled && (
-          <button className="real-button absolute top-[-90px]" onClick={handleEnableAudio}>启用提示音</button>
+          <button className="real-button fixed top-[10px] z-[51]" onClick={handleEnableAudio}>启用提示音</button>
         )}
         {ordersManager.orders.map((order, idx) => {
           return (
@@ -140,8 +140,8 @@ const Orders = observer(() => {
                 <div className="flex flex-col">
                   <div className="flex mb-2 h-[200px]">
                     <div className="flex flex-col justify-between text-[#555]">
-                      <div>ID： {order.did}</div>
-                      <div>座位号： {order.deskName}</div>
+                      <div>ID： {order.id}</div>
+                      <div>桌号： {order.deskName}</div>
                       <div>
                         消费总额：{" "}
                         <span className="text-[#e14f63] text-[12px]">¥</span>

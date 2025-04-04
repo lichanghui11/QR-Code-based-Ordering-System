@@ -17,6 +17,10 @@ export default defineConfig({
       '/restaurant': {
         target: 'http://192.168.3.11:5002/', 
         ws: true,
+      },
+      '/desk': {
+        target: 'http://192.168.3.11:5002/', 
+        ws: true,
       }
     },
   },

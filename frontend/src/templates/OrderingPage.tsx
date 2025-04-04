@@ -2,11 +2,12 @@ import { useRequest} from "ahooks"
 import axios from "axios"
 import { useParams, useSearchParams, useNavigate } from "react-router";
 import { type Food, type Desk } from "../types/types.ts";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useImmer } from 'use-immer'
 import clsx from 'clsx'
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Drawer, Divider, Empty, Skeleton } from "antd";
+import { io, type Socket } from "socket.io-client";
 
 function CartIcon() {
   return <ShoppingCartOutlined style={{ fontSize: "24px", color: "#000" }} />;
@@ -21,22 +22,29 @@ function getMenu(restaurantId: number | string): Promise<Food[]> {
 function getDeskInfo(deskId: number | string): Promise<Desk> {
   //拿到扫码的桌子的信息
   return axios.get("/api/deskinfo?did=" + deskId).then((res) => {
-    console.log("the info of the desk: ", res.data);
+    // console.log("the info of the desk: ", res.data);
     return res.data;
   });
 }
 
-
 //整个页面的组件
 export default function OrderingPage() {
   const params = useParams();
+  const navigator = useNavigate();
   const [querys] = useSearchParams();
-  const [foodCount, updateFoodCount] = useImmer<number[]>([]); //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
+  const [foodCount, updateFoodCount] = useImmer<number[]>([]);
+  //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
   const [foodSelected, updateFoodSelected] = useImmer<boolean[]>([]);
   // console.log("the count of foods: (foodCount)", foodCount);
   const [deskInfo, setDeskInfo] = useState<Desk | null>(null);
+  const [open, setOpen] = useState(false);
+  const toggleDrawer = () => setOpen((open) => !open);
 
-  const { data, loading } = useRequest(getMenu, {
+
+
+
+
+  const { data: menu, loading } = useRequest(getMenu, {
     defaultParams: [params.restaurantId!],
     onSuccess: (data) => {
       updateFoodCount((foodCount) => {
@@ -49,16 +57,86 @@ export default function OrderingPage() {
     },
   });
 
-  // console.log("the info of the menu: ", data);
+  const clientRef = useRef<Socket | null>(null)
+  useEffect(() => {
+    if (menu) {
 
-  const refreshFoodCount = (current: number, idx: number) => {
+      clientRef.current = io(`ws://${location.host}`, {
+        path: "/desk",
+        transports: ["websocket", "polling"],
+        query: {
+          desk: `desk:${params.deskId}`, //要加入的桌号
+        },
+      });
+  
+      clientRef.current.on(
+        "cart food",
+        (data: { amount: number; desk: string; food: Food }[]) => {
+          //购物车里面已经有的菜品
+          //后加入餐桌的用户打开页面后会接收到这个餐桌已经加入购物车的菜品
+          console.log("the food in the cart: ", data);
+
+          for (const info of data) {
+            const id = info.food.id;
+            const idx = menu.findIndex((it) => it.id === id);
+            updateFoodCount((draft) => {
+              draft[idx] = info.amount;
+            });
+          }
+        }
+      );
+  
+      clientRef.current.on('new food', (foodInfo: {amount: number, desk: string, food: Food}) => {
+        /**
+         * foodInfo = {
+         *   amount: number, //3
+         *   desk: string, //'desk:7' 
+         *   food: Food, //食物的具体信息
+         * }
+         */
+        //其他同桌客人点的餐品，每个设备都收到消息
+        console.log('others ordered a new food: ', foodInfo)
+
+          const foodId = foodInfo.food.id
+          const idx = menu!.findIndex(it => it.id === foodId)
+          console.log('the idx of the food in the menu: ', idx)
+          if (idx >= 0) {
+            updateFoodCount(foodCount => {
+              foodCount[idx] = foodInfo.amount 
+              console.log('the foodCount in the updater: ', foodCount)
+            })
+          }
+          console.log('the foodCount: ', foodCount)
+      })
+  
+      clientRef.current.on(
+        "placeorder success",
+        () => {
+          //某个用户已经下单，所有用户都收到消息
+          navigator('/place-order-success')
+        }
+      );
+  
+      return () => {
+        clientRef.current!.close()
+      };
+    }
+  }, [menu, foodCount]);
+
+
+  const refreshFoodCount = (count: number, idx: number) => {
     updateFoodCount((foodCount) => {
-      foodCount[idx] = current;
+      foodCount[idx] = count;
     });
+    //项服务器通知有新的订单
+    //服务器会将这个信息发给这个桌子所有正在点菜的人
+    //下面这段代码如果放在updateFoodCount里面开发工具会运行两次
+    clientRef.current!.emit('new food', {
+      desk: 'desk:' + params.deskId,
+      food: menu![idx],
+      amount: count,
+    })
   };
-
-  const [open, setOpen] = useState(false);
-  const toggleDrawer = () => setOpen((open) => !open);
 
   const selectedFoods = useMemo(() => {
     //这里计算出来的食物都是数量大于零的，不管有没有被check
@@ -67,11 +145,11 @@ export default function OrderingPage() {
         return {
           selected: foodSelected[idx], //每份食物是否被选择
           count: count, //每份食物的数量
-          food: data![idx], //每份食物的详情
+          food: menu![idx], //每份食物的详情
         };
       })
       .filter((it) => it.count > 0);
-  }, [data, foodCount, foodSelected]);
+  }, [menu, foodCount, foodSelected]);
   // console.log("the select of foods: (selectedFoods)", selectedFoods);
 
   const setFoodSected = (id: number, selected: boolean) => {
@@ -98,18 +176,20 @@ export default function OrderingPage() {
       draft.fill(0);
     });
   };
+  useEffect(() => {
+    console.log("foodCount updated:", foodCount);
+  }, [foodCount]);
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: newDeskInfo, loading: loading1} = useRequest(getDeskInfo, {
+  const { data: newDeskInfo, loading: loading1 } = useRequest(getDeskInfo, {
     defaultParams: [params.deskId!],
     refreshDeps: [params.deskId], // 每次 params.deskId 改变都发起请求
     onSuccess: (data) => {
       setDeskInfo(data);
     },
   });
-  console.log('new desk information: ', newDeskInfo)
-  
-  const navigator = useNavigate()
+  // console.log("new desk information: ", newDeskInfo);
+
   const placeOrder = async () => {
     const order = {
       deskName: deskInfo!.name,
@@ -129,13 +209,13 @@ export default function OrderingPage() {
       `/api/restaurant/${deskInfo!.rid}/desk/${deskInfo!.id}/order`,
       order
     );
-    navigator('/place-order-success')
+    navigator("/place-order-success");
   };
 
+  //======================条件只能写在最底层=====================//
   if (loading) {
     return <Skeleton />;
   }
-
   if (loading1) {
     return (
       <div style={{ padding: 24 }}>
@@ -147,14 +227,27 @@ export default function OrderingPage() {
     <>
       <div className="bg-[#fae158] h-full pt-4">
         <div className="bg-white shadow mb-1 mx-4 rounded px-2">
-          <div className="font-bold text-[24px]"><span className="font-normal text-[16px] mr-3">欢迎来到</span>{deskInfo!.title}</div>
+          <div className="font-bold text-[24px]">
+            <span className="font-normal text-[16px] mr-3">欢迎来到</span>
+            {deskInfo!.title}
+          </div>
 
-          <div className="text-[12px] text-[#9e9e9e] relative"><span className="">评分高<span className="border-l-[1px] inline-block h-2 mx-2 "></span></span><span className="">放心吃<span className="border-l-[1px] inline-block h-2 mx-2 "></span></span>营养也健康</div>
+          <div className="text-[12px] relative text-rose-400">
+            <span className="">
+              评分高
+              <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
+            </span>
+            <span className="">
+              放心吃
+              <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
+            </span>
+            营养又健康
+          </div>
           <div className="font-normal text-[16px]">请在下方选餐</div>
         </div>
 
         <div data-name="菜品循环" className="p-4 rounded bg-white pb-[40px]">
-          {data!.map((food: Food, idx: number) => (
+          {menu!.map((food: Food, idx: number) => (
             <div key={food.id} className="mb-10 ">
               <div className="flex justify-between">
                 <img className="w-30 rounded " src={`/upload/${food.img}`} />
@@ -227,7 +320,7 @@ export default function OrderingPage() {
 
         <div data-name="购物车抽屉">
           <FoodCart
-            menu={data!}
+            menu={menu!}
             foodCount={foodCount}
             open={open}
             setOpen={setOpen}
