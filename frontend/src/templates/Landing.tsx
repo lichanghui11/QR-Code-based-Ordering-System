@@ -3,6 +3,8 @@ import clsx from 'clsx'
 import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
 import { useRequest } from 'ahooks'
+import { deskInfoAtom } from '../store/store'
+import { useAtom } from 'jotai'
 
 
 function getDeskInfo(deskId: number | string) {
@@ -18,12 +20,16 @@ export default function Landing() {
   const [customCount, setCustomCount] = useState(0)
   const navigator = useNavigate()
   const params = useParams()
-  console.log(params)
+  console.log('params in the href: ', params)
+  const [, setDeskInfo] = useAtom(deskInfoAtom)
 
 
 
   const { data, loading } = useRequest(getDeskInfo, {
-    defaultParams: [params.deskId!]
+    defaultParams: [params.deskId!],
+    onSuccess: () => {
+      setDeskInfo(data.data)
+    }
   })
   
 

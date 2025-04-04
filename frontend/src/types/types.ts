@@ -39,6 +39,7 @@ export type Desk = {
   capacity: number;
   id: number,
   rid: number,
+  title: string,
 };
 
 /**

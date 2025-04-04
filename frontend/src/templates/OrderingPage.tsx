@@ -1,18 +1,14 @@
 import { useRequest} from "ahooks"
 import axios from "axios"
-import { useParams } from "react-router"
+import { useParams, useSearchParams, useNavigate } from "react-router";
 import { useAtom } from 'jotai'
 import { userAtom } from '../store/store.tsx'
-import { Skeleton } from "antd"
-import { type Food } from '../types/types.ts'
-import { useEffect, useState, useMemo } from "react";
+import { type Food, type Desk } from "../types/types.ts";
+import React, { useEffect, useState, useMemo } from "react";
 import { useImmer } from 'use-immer'
 import clsx from 'clsx'
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
-import React from "react";
-import { Drawer } from "antd";
-import { Divider } from "antd";
-import { Empty } from "antd";
+import { Drawer, Divider, Empty, Skeleton } from "antd";
 
 function CartIcon() {
   return <ShoppingCartOutlined style={{ fontSize: "24px", color: "#000" }} />;
@@ -24,15 +20,24 @@ function getMenu(restaurantId: number | string): Promise<Food[]> {
   });
 }
 
+function getDeskInfo(deskId: number | string): Promise<Desk> {
+  //拿到扫码的桌子的信息
+  return axios.get("/api/deskinfo?did=" + deskId).then((res) => {
+    console.log("the info of the table: ", res.data);
+    return res.data;
+  });
+}
+
 
 //整个页面的组件
 export default function OrderingPage() {
   const params = useParams();
+  const [querys] = useSearchParams();
   const [user] = useAtom(userAtom);
-  const [foodCount, updateFoodCount] = useImmer<number[]>([]);
-  //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
-  const [foodSelected, updateFoodSelected] = useImmer<boolean[]>([])
-  console.log("the count of foods: (foodCount)", foodCount);
+  const [foodCount, updateFoodCount] = useImmer<number[]>([]); //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
+  const [foodSelected, updateFoodSelected] = useImmer<boolean[]>([]);
+  // console.log("the count of foods: (foodCount)", foodCount);
+  const [deskInfo, setDeskInfo] = useState<Desk | null>(null);
 
   const { data, loading } = useRequest(getMenu, {
     defaultParams: [params.restaurantId!],
@@ -42,12 +47,12 @@ export default function OrderingPage() {
       });
 
       updateFoodSelected((foodSelected) => {
-        foodSelected.push(...Array(data.length).fill(true))
-      })
+        foodSelected.push(...Array(data.length).fill(true));
+      });
     },
   });
 
-  console.log("the info of the menu: ", data);
+  // console.log("the info of the menu: ", data);
 
   const refreshFoodCount = (current: number, idx: number) => {
     updateFoodCount((foodCount) => {
@@ -59,28 +64,75 @@ export default function OrderingPage() {
   const toggleDrawer = () => setOpen((open) => !open);
 
   const selectedFoods = useMemo(() => {
-    return foodCount.map((count, idx) => {
-      return {
-        selected: foodSelected[idx], //每份食物是否被选择
-        count: count, //每份食物的数量
-        food: data![idx]//每份食物的详情
-      }
-    }).filter(it => it.count > 0)
-  }, [data, foodCount, foodSelected])
-  console.log("the select of foods: (selectedFoods)", selectedFoods);
+    //这里计算出来的食物都是数量大于零的，不管有没有被check
+    return foodCount
+      .map((count, idx) => {
+        return {
+          selected: foodSelected[idx], //每份食物是否被选择
+          count: count, //每份食物的数量
+          food: data![idx], //每份食物的详情
+        };
+      })
+      .filter((it) => it.count > 0);
+  }, [data, foodCount, foodSelected]);
+  // console.log("the select of foods: (selectedFoods)", selectedFoods);
 
   const setFoodSected = (id: number, selected: boolean) => {
-    updateFoodSelected(foodSelected => {
-      foodSelected[id] = selected
-    })
+    updateFoodSelected((foodSelected) => {
+      foodSelected[id] = selected;
+    });
   };
 
-  const clearCart = () => {
-    updateFoodCount(draft => {
-      draft.fill(0)
-    })
-  }
+  const totalAmount = useMemo(() => {
+    return foodCount.filter((count) => count !== 0).reduce((a, b) => a + b, 0);
+  }, [foodCount]);
 
+  const totalPrice = useMemo(() => {
+    return selectedFoods
+      .filter((food) => food.selected)
+      .map((it) => {
+        return it.food.price * it.count;
+      })
+      .reduce((a, b) => a + b, 0);
+  }, [selectedFoods]);
+
+  const clearCart = () => {
+    updateFoodCount((draft) => {
+      draft.fill(0);
+    });
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: _ } = useRequest(getDeskInfo, {
+    defaultParams: [params.deskId!],
+    onSuccess: (data) => {
+      setDeskInfo(data);
+    },
+  });
+  
+  const navigator = useNavigate()
+  const placeOrder = async () => {
+    const order = {
+      deskName: deskInfo!.name,
+      customCount: querys.get("count"),
+      totalPrice,
+      foods: selectedFoods
+        .filter((it) => it.selected)
+        .map((it) => {
+          return {
+            amount: it.count,
+            food: it.food,
+          };
+        }),
+    };
+
+    const res = await axios.post(
+      `/api/restaurant/${deskInfo!.rid}/desk/${deskInfo!.id}/order`,
+      order
+    );
+    console.log("after ordering the food:", res.data);
+    navigator('/')
+  };
 
   if (loading) {
     return <Skeleton />;
@@ -137,30 +189,20 @@ export default function OrderingPage() {
           className="z-50 fixed bottom-[20px] bg-[#232426] left-4 rounded-[20px] h-[40px]  right-4"
         >
           <div className="text-white flex justify-between gap-4 ">
-
             <button
               onClick={() => toggleDrawer()}
               className="relative bg-[#fae158] rounded-l-[20px] h-[40px] px-4"
             >
               <CartIcon />
               <span className="absolute bg-[#e14f] rounded-full flex items-center justify-center w-4 h-4 text-[10px] top-[2px] left-8">
-                {foodCount
-                  .filter((count) => count !== 0)
-                  .reduce((a, b) => a + b, 0)}
+                {totalAmount}
               </span>
             </button>
 
             <span className="flex flex-col">
               <span>
                 <span className="text-[12px] mr-[3px]">¥</span>
-                <span className="font-bold">
-                  {selectedFoods
-                    .filter((food) => food.selected)
-                    .map((it) => {
-                      return it.food.price * it.count;
-                    })
-                    .reduce((a, b) => a + b, 0)}
-                </span>
+                <span className="font-bold">{totalPrice}</span>
               </span>
 
               <span className="text-[10px] font-normal text-[#fae158]">
@@ -168,7 +210,10 @@ export default function OrderingPage() {
               </span>
             </span>
 
-            <button className="bg-[#fae158] ml-auto h-[40px] rounded-r-[20px] inline-block text-black font-bold px-4">
+            <button
+              onClick={() => placeOrder()}
+              className="bg-[#fae158] ml-auto h-[40px] rounded-r-[20px] inline-block text-black font-bold px-4"
+            >
               去结算
             </button>
           </div>
