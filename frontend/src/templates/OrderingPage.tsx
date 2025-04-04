@@ -1,13 +1,15 @@
-import { useRequest} from "ahooks"
-import axios from "axios"
+import { useRequest, useThrottleFn } from "ahooks";
+import axios from "axios";
 import { useParams, useSearchParams, useNavigate } from "react-router";
 import { type Food, type Desk } from "../types/types.ts";
 import React, { useEffect, useState, useMemo, useRef } from "react";
-import { useImmer } from 'use-immer'
-import clsx from 'clsx'
+import { useImmer } from "use-immer";
+import clsx from "clsx";
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Drawer, Divider, Empty, Skeleton } from "antd";
 import { io, type Socket } from "socket.io-client";
+import { SideBar } from "antd-mobile";
+import _ from "lodash";
 
 function CartIcon() {
   return <ShoppingCartOutlined style={{ fontSize: "24px", color: "#000" }} />;
@@ -40,10 +42,6 @@ export default function OrderingPage() {
   const [open, setOpen] = useState(false);
   const toggleDrawer = () => setOpen((open) => !open);
 
-
-
-
-
   const { data: menu, loading } = useRequest(getMenu, {
     defaultParams: [params.restaurantId!],
     onSuccess: (data) => {
@@ -57,10 +55,9 @@ export default function OrderingPage() {
     },
   });
 
-  const clientRef = useRef<Socket | null>(null)
+  const clientRef = useRef<Socket | null>(null);
   useEffect(() => {
     if (menu) {
-
       clientRef.current = io(`ws://${location.host}`, {
         path: "/desk",
         transports: ["websocket", "polling"],
@@ -68,7 +65,7 @@ export default function OrderingPage() {
           desk: `desk:${params.deskId}`, //要加入的桌号
         },
       });
-  
+
       clientRef.current.on(
         "cart food",
         (data: { amount: number; desk: string; food: Food }[]) => {
@@ -85,44 +82,43 @@ export default function OrderingPage() {
           }
         }
       );
-  
-      clientRef.current.on('new food', (foodInfo: {amount: number, desk: string, food: Food}) => {
-        /**
-         * foodInfo = {
-         *   amount: number, //3
-         *   desk: string, //'desk:7' 
-         *   food: Food, //食物的具体信息
-         * }
-         */
-        //其他同桌客人点的餐品，每个设备都收到消息
-        console.log('others ordered a new food: ', foodInfo)
 
-          const foodId = foodInfo.food.id
-          const idx = menu!.findIndex(it => it.id === foodId)
-          console.log('the idx of the food in the menu: ', idx)
-          if (idx >= 0) {
-            updateFoodCount(foodCount => {
-              foodCount[idx] = foodInfo.amount 
-              console.log('the foodCount in the updater: ', foodCount)
-            })
-          }
-          console.log('the foodCount: ', foodCount)
-      })
-  
       clientRef.current.on(
-        "placeorder success",
-        () => {
-          //某个用户已经下单，所有用户都收到消息
-          navigator('/place-order-success')
+        "new food",
+        (foodInfo: { amount: number; desk: string; food: Food }) => {
+          /**
+           * foodInfo = {
+           *   amount: number, //3
+           *   desk: string, //'desk:7'
+           *   food: Food, //食物的具体信息
+           * }
+           */
+          //其他同桌客人点的餐品，每个设备都收到消息
+          console.log("others ordered a new food: ", foodInfo);
+
+          const foodId = foodInfo.food.id;
+          const idx = menu!.findIndex((it) => it.id === foodId);
+          console.log("the idx of the food in the menu: ", idx);
+          if (idx >= 0) {
+            updateFoodCount((foodCount) => {
+              foodCount[idx] = foodInfo.amount;
+              console.log("the foodCount in the updater: ", foodCount);
+            });
+          }
+          console.log("the foodCount: ", foodCount);
         }
       );
-  
+
+      clientRef.current.on("placeorder success", () => {
+        //某个用户已经下单，所有用户都收到消息
+        navigator("/place-order-success");
+      });
+
       return () => {
-        clientRef.current!.close()
+        clientRef.current!.close();
       };
     }
   }, [menu, foodCount]);
-
 
   const refreshFoodCount = (count: number, idx: number) => {
     updateFoodCount((foodCount) => {
@@ -131,11 +127,11 @@ export default function OrderingPage() {
     //项服务器通知有新的订单
     //服务器会将这个信息发给这个桌子所有正在点菜的人
     //下面这段代码如果放在updateFoodCount里面开发工具会运行两次
-    clientRef.current!.emit('new food', {
-      desk: 'desk:' + params.deskId,
+    clientRef.current!.emit("new food", {
+      desk: "desk:" + params.deskId,
       food: menu![idx],
       amount: count,
-    })
+    });
   };
 
   const selectedFoods = useMemo(() => {
@@ -180,8 +176,7 @@ export default function OrderingPage() {
     console.log("foodCount updated:", foodCount);
   }, [foodCount]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: newDeskInfo, loading: loading1 } = useRequest(getDeskInfo, {
+  const { loading: loading1 } = useRequest(getDeskInfo, {
     defaultParams: [params.deskId!],
     refreshDeps: [params.deskId], // 每次 params.deskId 改变都发起请求
     onSuccess: (data) => {
@@ -212,75 +207,182 @@ export default function OrderingPage() {
     navigator("/place-order-success");
   };
 
+  const groupedMenu = useMemo(() => {
+    if (menu) {
+      return _.groupBy(menu, "category");
+    } else {
+      return {};
+    }
+  }, [menu]);
+  console.log("grouped menu: ", groupedMenu);
+  
+  //侧边栏当前激活项目的key
+  const [activeKey, setActiveKey] = useState(Object.keys(groupedMenu)[0])
+  const { run: handleScroll } = useThrottleFn(
+    () => {
+      //默认选第一个
+      let currentKey = Object.keys(groupedMenu)[0]
+      for (const item of Object.keys(groupedMenu)) {
+        const element = document.getElementById(`anchor-${item}`)
+        if (!element) continue
+        const rect = element.getBoundingClientRect()
+        if (rect.top <= 126) {
+          currentKey = item
+        } else { 
+          break
+        }
+      }
+      setActiveKey(currentKey)
+      
+    },
+    {
+      leading: true, 
+      trailing: true,
+      wait: 100,
+    }
+  )
+
+  const mainElementRef = useRef<HTMLDivElement>(null)
+  // useEffect(() => {
+  //   const mainElement = mainElementRef.current
+
+  //   if (!mainElement) return 
+
+  //   mainElement.addEventListener('scroll', handleScroll)
+  //   return () => {
+  //     mainElement.removeEventListener('scroll', handleScroll)
+  //   }
+  // }, [])
+
+
+
   //======================条件只能写在最底层=====================//
   if (loading) {
-    return <Skeleton />;
-  }
-  if (loading1) {
     return (
       <div style={{ padding: 24 }}>
         <Skeleton active avatar paragraph={{ rows: 4 }} />
       </div>
     );
   }
+  if (loading1) {
+    return <Skeleton />;
+  }
   return (
     <>
-      <div className="bg-[#fae158] h-full pt-4">
-        <div className="bg-white shadow mb-1 mx-4 rounded px-2">
-          <div className="font-bold text-[24px]">
-            <span className="font-normal text-[16px] mr-3">欢迎来到</span>
-            {deskInfo!.title}
+      <div className="bg-[#f9f9f9] pt-1 h-screen flex flex-col overflow-hidden">
+        <div className="bg-white  rounded w-[90vw] mx-auto  px-2 h-[15vh] flex border border-transparent shadow-[0_0_5px_rgba(250,225,88,0.4),0_0_10px_rgba(250,225,88,0.3),0_0_20px_rgba(250,225,88,0.2),0_0_40px_rgba(250,225,88,0.1)]">
+          <div className=" flex items-center justify-center rounded mr-2 ">
+            <img
+              src="/animal.png"
+              className="w-[70px] h-[70px] rounded"
+              alt="图片占位符"
+            />
           </div>
 
-          <div className="text-[12px] relative text-rose-400">
-            <span className="">
-              评分高
-              <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
-            </span>
-            <span className="">
-              放心吃
-              <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
-            </span>
-            营养又健康
-          </div>
-          <div className="font-normal text-[16px]">请在下方选餐</div>
-        </div>
-
-        <div data-name="菜品循环" className="p-4 rounded bg-white pb-[40px]">
-          {menu!.map((food: Food, idx: number) => (
-            <div key={food.id} className="mb-10 ">
-              <div className="flex justify-between">
-                <img className="w-30 rounded " src={`/upload/${food.img}`} />
-                <div className="ml-2">
-                  <div>
-                    <span className="font-bold text-[20px] text-[#6f3713]">
-                      {food.name}
-                    </span>{" "}
-                  </div>
-                  <div>
-                    <span className="text-[#9e9e9e] text-[14px]">
-                      {food.desc}
-                    </span>{" "}
-                  </div>
-                  <div className="flex gap-4">
-                    <span className="text-[12px] text-[#e14f63] flex items-end">
-                      ¥
-                      <span className="text-[#e14f63] flex items-end text-[18px] ">
-                        {food.price}
-                      </span>
-                    </span>
-                    <Counter
-                      min={0}
-                      max={10}
-                      value={foodCount[idx]}
-                      step={1}
-                      onChange={(c) => refreshFoodCount(c, idx)}
-                    />
-                  </div>
-                </div>
-              </div>
+          <div className="my-auto">
+            <div className="font-bold text-[24px]">
+              <span className="font-normal text-[16px] mr-3">欢迎来到</span>
+              {deskInfo!.title}
             </div>
-          ))}
+
+            <div className="text-[12px] relative text-rose-400">
+              <span className="">
+                评分高
+                <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
+              </span>
+              <span className="">
+                放心吃
+                <span className="border-l-[1px] inline-block h-2 mx-2 text-[#9e9e9e] "></span>
+              </span>
+              营养又健康
+            </div>
+          </div>
+        </div>
+        <div
+          data-name="左边分类 右边详情"
+          className=" flex flex-1 overflow-auto  rounded-t-[16px] shadow"
+        >
+          <div className="overflow-auto">
+            <SideBar
+              activeKey={activeKey}
+              onChange={(key) => {
+                document.getElementById(`anchor-${key}`)?.scrollIntoView({
+                  behavior: "smooth",
+                });
+              }}
+            >
+              {Object.keys(groupedMenu).map((category) => {
+                return <SideBar.Item title={category} key={category} />;
+              })}
+            </SideBar>
+          </div>
+
+          <div
+            data-name="菜品循环"
+            className=" p-4 rounded bg-white pb-[40px] grow overflow-auto"
+            ref={mainElementRef}
+            onScroll={() => handleScroll()}
+          >
+            {Object.entries(groupedMenu).map((entry) => {
+              const [key, foodItem] = entry;
+              return (
+                <div>
+                  <h1 className="text-[20px] font-bold" id={`anchor-${key}`}>
+                    {key}
+                  </h1>
+                  {foodItem.map((food, idx) => {
+                    return (
+                      <div key={food.id} className="mb-5 ">
+                        <div className="flex justify-between">
+                          <img
+                            className="w-30 rounded "
+                            src={`/upload/${food.img}`}
+                          />
+
+                          <div className="">
+                            <div>
+                              <span className="font-bold text-[20px] text-[#6f3713]">
+                                {food.name}
+                              </span>{" "}
+                              <span className="border-l-[1px] inline-block h-2 mx-1 text-[#9e9e9e] "></span>
+                              <span>{food.category}</span>
+                            </div>
+
+                            <div>
+                              <span className="text-[#9e9e9e] text-[14px]">
+                                {food.desc}
+                              </span>{" "}
+                            </div>
+
+                            <div className="flex gap-4">
+                              <span className="text-[12px] text-[#e14f63] flex items-end">
+                                ¥
+                                <span className="text-[#e14f63] flex items-end text-[18px] ">
+                                  {food.price}
+                                </span>
+                              </span>
+
+                              <Counter
+                                min={0}
+                                max={10}
+                                value={foodCount[idx]}
+                                step={1}
+                                onChange={(c) => refreshFoodCount(c, idx)}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            <Divider className="!text-[12px] !text-[#9e9e9e]">
+              我是有底线的
+            </Divider>
+            <div className="h-[calc(100%_-_100px)]"></div>
+          </div>
         </div>
 
         <div
@@ -345,14 +447,13 @@ type CounterProp = {
   onChange: (newValue: number) => void;
 };
 const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
-
   const inc = () => {
-    const diff = Math.min(value + step!, max!)
-    onChange(diff)
+    const diff = Math.min(value + step!, max!);
+    onChange(diff);
   };
   const dec = () => {
-    const diff = Math.max(value - step!, min!)
-    onChange(diff)
+    const diff = Math.max(value - step!, min!);
+    onChange(diff);
   };
 
   return (
@@ -393,15 +494,12 @@ const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
   );
 };
 
-
-
-
 //购物车抽屉组件
 type SelectedFood = {
-  count: number, 
-  selected: boolean, 
-  food: Food,
-}
+  count: number;
+  selected: boolean;
+  food: Food;
+};
 
 type FoodCartProp = {
   menu: Food[];
@@ -410,8 +508,8 @@ type FoodCartProp = {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
   selectedFoods: SelectedFood[];
-  setFoodSelected: (id: number, selected: boolean) => void
-  clearCart: () => void
+  setFoodSelected: (id: number, selected: boolean) => void;
+  clearCart: () => void;
 };
 const FoodCart: React.FC<FoodCartProp> = ({
   menu,
@@ -423,7 +521,6 @@ const FoodCart: React.FC<FoodCartProp> = ({
   setFoodSelected,
   clearCart,
 }: FoodCartProp) => {
-
   const onClose = () => {
     setOpen(false);
   };
@@ -457,8 +554,8 @@ const FoodCart: React.FC<FoodCartProp> = ({
             overflow: "hidden", // 防止内容溢出显示圆角
           },
           body: {
-            padding: 0
-          }
+            padding: 0,
+          },
         }}
       >
         <div className="fixed w-full bg-white z-[49]">
@@ -467,13 +564,10 @@ const FoodCart: React.FC<FoodCartProp> = ({
           </div>
           <div className="px-4 py-2 flex border-b border-[#f9f9f9]">
             <span className="">已选商品</span>
-            <button
-              className="text-[#8c8c8c] text-[12px] ml-auto cursor-pointer"
-            >
+            <button className="text-[#8c8c8c] text-[12px] ml-auto cursor-pointer">
               {(foodCount.filter((it) => it > 0).length > 0 && (
                   <DeleteOutlined />
-                ) &&
-              <span onClick={() => clearCart()}>清空购物车</span>  ) || (
+                ) && <span onClick={() => clearCart()}>清空购物车</span>) || (
                 <span className="text-[#e14f63]">购物车是空的</span>
               )}
             </button>
@@ -500,7 +594,12 @@ const FoodCart: React.FC<FoodCartProp> = ({
                 className="mb-[10px] bg-white rounded shadow"
               >
                 <div className="flex gap-1 shrink-0 items-center">
-                  <input className="px-2" type="checkbox" checked={selectedFoods[id].selected} onChange={(e) => setFoodSelected(it.idx, e.target.checked)}/>
+                  <input
+                    className="px-2"
+                    type="checkbox"
+                    checked={selectedFoods[id].selected}
+                    onChange={(e) => setFoodSelected(it.idx, e.target.checked)}
+                  />
                   <img
                     className="w-30 rounded "
                     src={`/upload/${it.food!.img}`}
@@ -537,7 +636,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
                 </div>
               </div>
             ))}
-          {foodCount.filter(it => it > 0).length > 0 ? (
+          {foodCount.filter((it) => it > 0).length > 0 ? (
             <Divider className="!text-[12px] !text-[#9e9e9e]">
               我是有底线的
             </Divider>

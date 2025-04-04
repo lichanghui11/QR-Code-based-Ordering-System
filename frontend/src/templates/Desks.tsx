@@ -40,7 +40,7 @@ const Desks = observer( () => {
     const urls = await Promise.all(
       deskManager.desks.map((desk) => {
         return QRCode.toDataURL(
-          `http://192.168.3.11:5173/r/restaurantId:${user.id}/d/deskId:${desk.id}`
+          `http://192.168.3.11:5173/landing/r/${user.id}/d/${desk.id}`
         );
       })
     )
@@ -160,7 +160,7 @@ const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
           {" "}
           餐桌名称:{" "}
           <span className="text-[#6f3713] font-bold text-[18px]">
-            {desk.name}
+            {desk.name}-{desk.id}
           </span>
         </div>
         <div>用餐人数: {desk.capacity}</div>
@@ -188,7 +188,7 @@ const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
 
       <div>
         <img
-          data-url={`http://192.168.3.11:5173/r/1/d/${desk.id}`}
+          data-url={`http://192.168.3.11:5173/landing/r/${desk.rid}/d/${desk.id}`}
           src={qrcodes[idx]}
           alt=""
         />
