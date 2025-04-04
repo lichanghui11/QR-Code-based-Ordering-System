@@ -66,6 +66,11 @@ const router = createBrowserRouter([
     path: '/r/:restaurantId/d/:deskId', 
     element: <OrderingPage />
   },
+  {
+    path: '/place-order-success', 
+    element: <>下单成功</>
+  },
+
 
 ])
 

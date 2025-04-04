@@ -12,8 +12,12 @@ export default defineConfig({
       //   changeOrigin: true,
       //   rewrite: (path) => path.replace(/^\/api/, ""),
       // },
-      '/api': "http://localhost:5002",
-      '/upload': "http://localhost:5002",
+      '/api': "http://192.168.3.11:5002/",
+      '/upload': "http://192.168.3.11:5002/",
+      '/restaurant': {
+        target: 'http://192.168.3.11:5002/', 
+        ws: true,
+      }
     },
   },
 });

@@ -1,8 +1,6 @@
 import { useRequest} from "ahooks"
 import axios from "axios"
 import { useParams, useSearchParams, useNavigate } from "react-router";
-import { useAtom } from 'jotai'
-import { userAtom } from '../store/store.tsx'
 import { type Food, type Desk } from "../types/types.ts";
 import React, { useEffect, useState, useMemo } from "react";
 import { useImmer } from 'use-immer'
@@ -23,7 +21,7 @@ function getMenu(restaurantId: number | string): Promise<Food[]> {
 function getDeskInfo(deskId: number | string): Promise<Desk> {
   //拿到扫码的桌子的信息
   return axios.get("/api/deskinfo?did=" + deskId).then((res) => {
-    console.log("the info of the table: ", res.data);
+    console.log("the info of the desk: ", res.data);
     return res.data;
   });
 }
@@ -33,7 +31,6 @@ function getDeskInfo(deskId: number | string): Promise<Desk> {
 export default function OrderingPage() {
   const params = useParams();
   const [querys] = useSearchParams();
-  const [user] = useAtom(userAtom);
   const [foodCount, updateFoodCount] = useImmer<number[]>([]); //foodCount是一个菜单长度的数组，记录客人对每个菜点了多少份
   const [foodSelected, updateFoodSelected] = useImmer<boolean[]>([]);
   // console.log("the count of foods: (foodCount)", foodCount);
@@ -103,12 +100,14 @@ export default function OrderingPage() {
   };
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: _ } = useRequest(getDeskInfo, {
+  const { data: newDeskInfo, loading: loading1} = useRequest(getDeskInfo, {
     defaultParams: [params.deskId!],
+    refreshDeps: [params.deskId], // 每次 params.deskId 改变都发起请求
     onSuccess: (data) => {
       setDeskInfo(data);
     },
   });
+  console.log('new desk information: ', newDeskInfo)
   
   const navigator = useNavigate()
   const placeOrder = async () => {
@@ -126,25 +125,32 @@ export default function OrderingPage() {
         }),
     };
 
-    const res = await axios.post(
+    await axios.post(
       `/api/restaurant/${deskInfo!.rid}/desk/${deskInfo!.id}/order`,
       order
     );
-    console.log("after ordering the food:", res.data);
-    navigator('/')
+    navigator('/place-order-success')
   };
 
   if (loading) {
     return <Skeleton />;
   }
 
+  if (loading1) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Skeleton active avatar paragraph={{ rows: 4 }} />
+      </div>
+    );
+  }
   return (
     <>
       <div className="bg-[#fae158] h-full pt-4">
-        <div className="bg-white shadow mb-1 mx-4 rounded ">
-          <div>{user.title}</div>
-          <div>欢迎您的光临</div>
-          <div>有折扣哦</div>
+        <div className="bg-white shadow mb-1 mx-4 rounded px-2">
+          <div className="font-bold text-[24px]"><span className="font-normal text-[16px] mr-3">欢迎来到</span>{deskInfo!.title}</div>
+
+          <div className="text-[12px] text-[#9e9e9e] relative"><span className="">评分高<span className="border-l-[1px] inline-block h-2 mx-2 "></span></span><span className="">放心吃<span className="border-l-[1px] inline-block h-2 mx-2 "></span></span>营养也健康</div>
+          <div className="font-normal text-[16px]">请在下方选餐</div>
         </div>
 
         <div data-name="菜品循环" className="p-4 rounded bg-white pb-[40px]">
@@ -186,7 +192,7 @@ export default function OrderingPage() {
 
         <div
           data-name="底部购物车"
-          className="z-50 fixed bottom-[20px] bg-[#232426] left-4 rounded-[20px] h-[40px]  right-4"
+          className="z-[99999] fixed bottom-[20px] bg-[#232426] left-4 rounded-[20px] h-[40px]  right-4"
         >
           <div className="text-white flex justify-between gap-4 ">
             <button

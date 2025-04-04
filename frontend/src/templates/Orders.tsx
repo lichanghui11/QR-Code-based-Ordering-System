@@ -1,11 +1,19 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { userAtom } from "../store/store.tsx";
 import { useAtomValue } from "jotai";
 import { type Order } from "../types/types.ts";
 import PrintButton from "../utils/PrintButton.tsx";
 import { makeAutoObservable, observable } from "mobx";
 import { observer } from "mobx-react-lite";
+import { io } from 'socket.io-client'
+import { configure } from 'mobx'
+configure({
+  enforceActions: 'never'
+})
+
+
+
 
 function formatISOToLocal(isoTimestamp: string) {
   const date = new Date(isoTimestamp);
@@ -39,7 +47,7 @@ class EachOrders {
 const Orders = observer(() => {
   const [ordersManager] = useState(() => observable(new EachOrders()));
   const user = useAtomValue(userAtom);
-  console.log('user in the store: ',user)
+  console.log("user in the store: ", user);
 
   //刷新页面后，atom里面的user信息就会丢失，
   //一个方法是将数据存到localStorage
@@ -58,6 +66,46 @@ const Orders = observer(() => {
       ignore = true;
     };
   }, []);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const handleEnableAudio = () => {
+    if (audioRef.current) {
+      audioRef.current.play()
+        .then(() => {
+          audioRef.current!.pause();
+          audioRef.current!.currentTime = 0;
+          setAudioEnabled(true);
+        })
+        .catch((err) => console.error("初始化音频失败:", err));
+    }
+  }
+
+
+  useEffect(() => {
+    const client = io(`ws://192.168.3.11:5173`, {
+      path: "/restaurant",
+      transports: ["websocket", "polling"],
+      query: {
+        restaurant: "restaurant:1", //要监听的餐厅id
+      },
+    });
+
+    client.on("new order", (newOrder) => {
+      if (audioEnabled && audioRef.current) {
+        audioRef.current.play().catch((err) =>
+          console.error("音频播放失败:", err)
+        );
+      }
+      
+      ordersManager.orders.unshift(newOrder);
+      console.log("now order................", newOrder);
+    });
+
+    return () => {
+      client.close();
+    };
+  }, [audioEnabled]);
 
   async function deleteOrder(id: number, idx: number) {
     await axios.delete("/api/reataurant/1/order/" + id);
@@ -80,7 +128,11 @@ const Orders = observer(() => {
 
   return (
     <>
-      <ul className="px-4 bg-[#f9f9f9]">
+      <ul className="relative px-4 bg-[#f9f9f9]">
+        <audio src="/new-order-sound.mp3" ref={audioRef}></audio>
+        {!audioEnabled && (
+          <button className="real-button absolute top-[-90px]" onClick={handleEnableAudio}>启用提示音</button>
+        )}
         {ordersManager.orders.map((order, idx) => {
           return (
             <>
@@ -144,7 +196,7 @@ const Orders = observer(() => {
                   <ul className="bg-[#fdf4e4] text-[#9f745b] rounded">
                     {order.details.map((detail) => {
                       return (
-                        <li key={order.id} className="p-2 mb-2">
+                        <li key={Math.random()} className="p-2 mb-2">
                           <div>
                             菜名：{" "}
                             <span className="text-[#6f3713] font-bold text-[18px]">

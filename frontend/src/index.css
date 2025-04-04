@@ -1,6 +1,25 @@
 @import "tailwindcss";
 
+.real-button {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: #fff;
+  background: linear-gradient(to bottom, #FF6B6B, #D32F2F);
+  border-radius: 5px;
+  box-shadow: 0 4px 0 #B71C1C;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
 
+.real-button:hover {
+  background: linear-gradient(to bottom, #FF8A80, #E53935);
+}
+
+.real-button:active {
+  box-shadow: 0 2px 0 #b7ecec;
+  transform: translateY(2px);
+}
 
 /* :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
