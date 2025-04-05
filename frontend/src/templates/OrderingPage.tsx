@@ -8,7 +8,7 @@ import clsx from "clsx";
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
 import { Drawer, Divider, Empty, Skeleton } from "antd";
 import { io, type Socket } from "socket.io-client";
-import { SideBar } from "antd-mobile";
+import { SideBar, Checkbox } from "antd-mobile";
 import _ from "lodash";
 
 function CartIcon() {
@@ -120,8 +120,11 @@ export default function OrderingPage() {
     }
   }, [menu, foodCount]);
 
-  const refreshFoodCount = (count: number, idx: number) => {
+  const refreshFoodCount = (foodId: number, count: number) => {
+    let idx: number
     updateFoodCount((foodCount) => {
+      idx = menu!.findIndex(it => it.id === foodId)
+
       foodCount[idx] = count;
     });
     //项服务器通知有新的订单
@@ -129,7 +132,7 @@ export default function OrderingPage() {
     //下面这段代码如果放在updateFoodCount里面开发工具会运行两次
     clientRef.current!.emit("new food", {
       desk: "desk:" + params.deskId,
-      food: menu![idx],
+      food: menu![idx!],
       amount: count,
     });
   };
@@ -330,7 +333,8 @@ export default function OrderingPage() {
                   <h1 className="text-[20px] font-bold" id={`anchor-${key}`}>
                     {key}
                   </h1>
-                  {foodItem.map((food, idx) => {
+                  {foodItem.map((food) => {
+                    const id = menu!.findIndex(it => it.id === food.id)
                     return (
                       <div key={food.id} className="mb-5 ">
                         <div className="flex justify-between">
@@ -365,9 +369,9 @@ export default function OrderingPage() {
                               <Counter
                                 min={0}
                                 max={10}
-                                value={foodCount[idx]}
+                                value={foodCount[id!]}
                                 step={1}
-                                onChange={(c) => refreshFoodCount(c, idx)}
+                                onChange={(c) => refreshFoodCount(food.id, c)}
                               />
                             </div>
                           </div>
@@ -381,7 +385,7 @@ export default function OrderingPage() {
             <Divider className="!text-[12px] !text-[#9e9e9e]">
               我是有底线的
             </Divider>
-            <div className="h-[calc(100%_-_100px)]"></div>
+            <div className="h-[calc(100%_-_126px)]"></div>
           </div>
         </div>
 
@@ -594,12 +598,18 @@ const FoodCart: React.FC<FoodCartProp> = ({
                 className="mb-[10px] bg-white rounded shadow"
               >
                 <div className="flex gap-1 shrink-0 items-center">
-                  <input
+                  <Checkbox
+                    checked={selectedFoods[id].selected}
+                    onChange={(checked) => setFoodSelected(it.idx, checked)}
                     className="px-2"
-                    type="checkbox"
+                  />
+
+                  {/* <input
                     checked={selectedFoods[id].selected}
                     onChange={(e) => setFoodSelected(it.idx, e.target.checked)}
-                  />
+                    className="px-2"
+                    type="checkbox"
+                  /> */}
                   <img
                     className="w-30 rounded "
                     src={`/upload/${it.food!.img}`}
@@ -628,7 +638,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
 
                   <Counter
                     value={foodCount[it.idx]}
-                    onChange={(c) => refreshFoodCount(c, it.idx)}
+                    onChange={(c) => refreshFoodCount(it.food!.id, c)}
                     min={0}
                     max={10}
                     step={1}
