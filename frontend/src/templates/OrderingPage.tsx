@@ -6,9 +6,9 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useImmer } from "use-immer";
 import clsx from "clsx";
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Drawer, Divider, Empty, Skeleton } from "antd";
+import { Drawer, Divider, Empty} from "antd";
 import { io, type Socket } from "socket.io-client";
-import { SideBar, Checkbox } from "antd-mobile";
+import { SideBar, Checkbox, Skeleton  } from "antd-mobile";
 import _ from "lodash";
 
 function CartIcon() {
@@ -263,12 +263,22 @@ export default function OrderingPage() {
   if (loading) {
     return (
       <div style={{ padding: 24 }}>
-        <Skeleton active avatar paragraph={{ rows: 4 }} />
+        <Skeleton.Title animated/>
+        <Skeleton.Paragraph lineCount={4} animated/>
+        <Skeleton.Title animated/>
+        <Skeleton.Paragraph lineCount={9} animated/>
       </div>
     );
   }
   if (loading1) {
-    return <Skeleton />;
+    return (
+      <div style={{ padding: 24 }}>
+        <Skeleton.Title animated/>
+        <Skeleton.Paragraph lineCount={4} animated/>
+        <Skeleton.Title animated/>
+        <Skeleton.Paragraph lineCount={9} animated/>
+      </div>
+    );
   }
   return (
     <>
