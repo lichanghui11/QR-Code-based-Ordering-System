@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { userAtom } from "../store/store.tsx";
 import { useAtomValue } from "jotai";
 import { type Order } from "../types/types.ts";
@@ -11,6 +11,8 @@ import { configure } from 'mobx'
 configure({
   enforceActions: 'never'
 })
+import { notification } from 'antd'
+import React from "react";
 
 
 
@@ -43,11 +45,13 @@ class EachOrders {
   }
 }
 
-// 示例使用// 注意：输出的时间根据本地时区而定
+
+const Context = React.createContext({name: 'Default'})
 const Orders = observer(() => {
   const [ordersManager] = useState(() => observable(new EachOrders()));
   const user = useAtomValue(userAtom);
   console.log("user in the store: ", user);
+  const [api, contextHolder] = notification.useNotification()
 
   //刷新页面后，atom里面的user信息就会丢失，
   //一个方法是将数据存到localStorage
@@ -97,7 +101,22 @@ const Orders = observer(() => {
           console.error("音频播放失败:", err)
         );
       }
-      
+
+      setTimeout(() => {
+        api.info({
+          message: '有新的订单！',
+          duration: null,
+          description: <Context.Consumer>{() => null}</Context.Consumer>,
+          style: {
+            // paddingLeft: '10px',
+            // paddingRight: '10px',
+            // paddingTop: '5px', 
+            // paddingBottom: '5px', 
+          }
+        })
+      }, 100)
+
+
       ordersManager.orders.unshift(newOrder);
       console.log("now order................", newOrder);
     });
@@ -126,8 +145,11 @@ const Orders = observer(() => {
     ordersManager.changeOrderStatus(idx, "completed");
   }
 
+  const contextValue = useMemo(()  => ({ name: 'aaa'}), [])
+
   return (
-    <>
+    <Context.Provider value={contextValue}>
+      {contextHolder}
       <ul className="relative px-4 bg-[#f9f9f9]">
         <audio src="/new-order-sound.mp3" ref={audioRef}></audio>
         {!audioEnabled && (
@@ -224,7 +246,7 @@ const Orders = observer(() => {
           );
         })}
       </ul>
-    </>
+    </Context.Provider>
   );
 });
 
