@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router';
-import { useInput } from '../hooks/hooks.ts'
+import { useInput } from '../hooks/hooks.tsx'
 import axios from 'axios';
 
 

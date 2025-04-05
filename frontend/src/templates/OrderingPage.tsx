@@ -6,10 +6,13 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useImmer } from "use-immer";
 import clsx from "clsx";
 import { ShoppingCartOutlined, DeleteOutlined } from "@ant-design/icons";
-import { Drawer, Divider, Empty} from "antd";
+import { Drawer, Divider, Empty } from "antd";
 import { io, type Socket } from "socket.io-client";
-import { SideBar, Checkbox, Skeleton  } from "antd-mobile";
+import { SideBar, Checkbox, Skeleton, Modal  } from "antd-mobile";
 import _ from "lodash";
+
+
+
 
 function CartIcon() {
   return <ShoppingCartOutlined style={{ fontSize: "24px", color: "#000" }} />;
@@ -167,7 +170,7 @@ export default function OrderingPage() {
       .map((it) => {
         return it.food.price * it.count;
       })
-      .reduce((a, b) => a + b, 0);
+      .reduce((a, b) => a + b, 0).toFixed(2)
   }, [selectedFoods]);
 
   const clearCart = () => {
@@ -229,7 +232,7 @@ export default function OrderingPage() {
         const element = document.getElementById(`anchor-${item}`)
         if (!element) continue
         const rect = element.getBoundingClientRect()
-        if (rect.top <= 126) {
+        if (rect.top <= 160) {
           currentKey = item
         } else { 
           break
@@ -249,15 +252,34 @@ export default function OrderingPage() {
   // useEffect(() => {
   //   const mainElement = mainElementRef.current
 
-  //   if (!mainElement) return 
+  //   if (!mainElement) return
 
   //   mainElement.addEventListener('scroll', handleScroll)
   //   return () => {
   //     mainElement.removeEventListener('scroll', handleScroll)
   //   }
-  // }, [])
-
-
+  // }, []1)
+function showFoodDetail(food: Food) {
+  Modal.show({
+    // 弹窗中的自定义内容
+    content: (
+      <div style={{ textAlign: "center" }}>
+        <img
+          src={food.img}
+          style={{ width: "100%", borderRadius: 8 }}
+        />
+        <h3 style={{ margin: "12px 0 4px" }}>{food.name}</h3>
+        <p style={{ fontSize: 14, color: "#999" }}>{food.desc}</p>
+      </div>
+    ),
+    showCloseButton: true, // 右上角叉叉
+    closeOnMaskClick: true, // 点蒙层关闭
+    bodyStyle: {
+      borderRadius: "8px",
+      overflow: "hidden",
+    },
+  });
+}
 
   //======================条件只能写在最底层=====================//
   if (loading) {
@@ -282,8 +304,9 @@ export default function OrderingPage() {
   }
   return (
     <>
-      <div className="bg-[#f9f9f9] pt-1 h-screen flex flex-col overflow-hidden">
-        <div className="bg-white  rounded w-[90vw] mx-auto  px-2 h-[15vh] flex border border-transparent shadow-[0_0_5px_rgba(250,225,88,0.4),0_0_10px_rgba(250,225,88,0.3),0_0_20px_rgba(250,225,88,0.2),0_0_40px_rgba(250,225,88,0.1)]">
+      <div className="xbg-[#f9f9f9] pt-1 h-screen flex flex-col overflow-hidden bg-[url('/animal.png')] bg-cover bg-no-repeat w-screen ">
+        
+        <div className="bg-white opacity-93 rounded w-[90vw] mx-auto  px-2 h-[15vh] flex ">
           <div className=" flex items-center justify-center rounded mr-2 ">
             <img
               src="/animal.png"
@@ -332,25 +355,27 @@ export default function OrderingPage() {
 
           <div
             data-name="菜品循环"
-            className=" p-4 rounded bg-white pb-[40px] grow overflow-auto"
+            className=" p-4 rounded bg-white xpb-[40px] grow overflow-auto "
             ref={mainElementRef}
             onScroll={() => handleScroll()}
           >
-            {Object.entries(groupedMenu).map((entry) => {
+            {Object.entries(groupedMenu).map((entry, i) => {
               const [key, foodItem] = entry;
               return (
-                <div>
-                  <h1 className="text-[20px] font-bold" id={`anchor-${key}`}>
+                <div key={i} className="">
+                  <h1 className="text-[20px] font-bold sticky top-[-16px] bg-white my-0 z-[99] ">
                     {key}
                   </h1>
+                  <h1 id={`anchor-${key}`} className="mb-[36px] "></h1>
                   {foodItem.map((food) => {
-                    const id = menu!.findIndex(it => it.id === food.id)
+                    const id = menu!.findIndex((it) => it.id === food.id);
                     return (
                       <div key={food.id} className="mb-5 ">
                         <div className="flex justify-between">
                           <img
                             className="w-30 rounded "
                             src={`/upload/${food.img}`}
+                            onClick={() => showFoodDetail(food)}
                           />
 
                           <div className="">
@@ -395,7 +420,7 @@ export default function OrderingPage() {
             <Divider className="!text-[12px] !text-[#9e9e9e]">
               我是有底线的
             </Divider>
-            <div className="h-[calc(100%_-_126px)]"></div>
+            <div className="h-[calc(100%_-_100px)]"></div>
           </div>
         </div>
 
@@ -558,7 +583,7 @@ const FoodCart: React.FC<FoodCartProp> = ({
         placement="bottom"
         onClose={onClose}
         open={open}
-        zIndex={40}
+        zIndex={99}
         closable={false} // 取消左上角的叉叉按钮
         className="px-0 rounded-top-[10px]"
         styles={{

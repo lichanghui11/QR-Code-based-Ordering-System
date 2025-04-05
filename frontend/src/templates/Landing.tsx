@@ -5,6 +5,7 @@ import axios from 'axios'
 import { useRequest } from 'ahooks'
 import { deskInfoAtom } from '../store/store'
 import { useAtom } from 'jotai'
+import { Skeleton } from 'antd-mobile'
 
 
 function getDeskInfo(deskId: number | string) {
@@ -41,13 +42,23 @@ export default function Landing() {
     }
 
   }
+  if (loading ) {
+    return (
+      <div style={{ padding: 24 }}>
+        <Skeleton.Title animated />
+        <Skeleton.Paragraph lineCount={4} animated />
+        <Skeleton.Title animated />
+        <Skeleton.Paragraph lineCount={9} animated />
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="p-4">
         <div className="text-center my-4 bg-[#fae158] rounded py-2"><span className='font-bold text-[18px]'>{loading ? 'Loading...' : data.title + ' : ' + data.name}</span></div>
         <div className="font-bold my-2">请选择用餐人数：</div>
-        <div className="flex gap-4 flex-wrap">
+        <div className="grid gap-3 grid-cols-6 ">
           {
             new Array(14).fill(0).map((_, idx) => {
               return <span key={idx} className={clsx("cursor-pointer w-8 h-8 flex justify-center items-center bg-[#f9f9f9] rounded-full", {'bg-[#fae158] text-black': customCount === idx + 1})} onClick={() => setCustomCount(idx + 1)}>{idx + 1}</span>

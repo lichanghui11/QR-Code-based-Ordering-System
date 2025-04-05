@@ -1,10 +1,11 @@
 import { Suspense, useEffect, useState } from "react";
-import { Link, Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 // import { Skeleton } from "antd";
 import { useAtom } from "jotai";
 import { isLoginAtom } from "../store/store";
 import axios from "axios";
 import { type User } from "../types/types.ts";
+import { Tabs } from "antd";
 
 // const Loading: React.FC = () => <Skeleton active />;
 // console.log('登录状态： ', isLoginAtom)
@@ -12,7 +13,6 @@ export default function Test() {
   const [isLogin] = useAtom(isLoginAtom);
   const navigate = useNavigate();
   const [userinfo, setUserinfo] = useState<null | User>(null);
-  const [selectedTab, setSelectedTab] = useState<string>("orders");
   const navigator = useNavigate();
 
   function logout() {
@@ -22,13 +22,6 @@ export default function Test() {
     });
   }
 
-  const getTabClass = (tabName: string) => {
-    if (tabName === selectedTab) {
-      return "my-[5px] h-[40px] flex bg-[#fae158] items-center border rounded border-[#f9f9f9] px-[20px] font-bold";
-    } else {
-      return "my-[5px] h-[40px] flex bg-white items-center border rounded border-[#f9f9f9] px-[20px] font-bold";
-    }
-  };
 
   useEffect(() => {
     axios.get("/api/userinfo").then((res) => {
@@ -42,6 +35,31 @@ export default function Test() {
       navigate("/");
     }
   }, [isLogin, navigate]);
+
+  const location = useLocation();
+
+  // 定义三个 tab 的数据
+  const items = [
+    { key: "orders", label: "订单管理" },
+    { key: "foods", label: "菜品管理" },
+    { key: "desks", label: "桌面管理" },
+  ];
+
+  // 根据当前路由路径设置 activeKey
+  // 假设子路由路径为 "/orders", "/foods", "/desks"
+  const getActiveKey = () => {
+    const path = location.pathname;
+    if (path.includes("orders")) return "orders";
+    if (path.includes("foods")) return "foods";
+    if (path.includes("desks")) return "desks";
+    // 默认返回第一个
+    return items[0].key;
+  };
+
+  // 在 tab 切换时导航到对应的子路由
+  const onChange = (activeKey: string) => {
+    navigate(activeKey);
+  };
 
   if (isLogin === false) {
     //组件函数原则上应该是一个纯函数，不应该返回任何东西
@@ -61,35 +79,21 @@ export default function Test() {
               退出
             </button>
           </div>
-          <div className="flex justify-around items-center bg-[#f9f9f9] rounded-t-2xl">
-            <Link
-              to="orders"
-              onClick={() => {
-                setSelectedTab("orders");
-              }}
-              className={getTabClass("orders")}
-            >
-              订单管理
-            </Link>
-            <Link
-              to="foods"
-              onClick={() => {
-                setSelectedTab("foods");
-              }}
-              className={getTabClass("foods")}
-            >
-              菜品管理
-            </Link>
-            <Link
-              to="desks"
-              onClick={() => {
-                setSelectedTab("desks");
-              }}
-              className={getTabClass("desks")}
-            >
-              桌面管理
-            </Link>
-          </div>
+          {/* 使用 Tabs 来切换不同的管理页面 */}
+          <Tabs
+            activeKey={getActiveKey()}
+            items={items}
+            onChange={onChange}
+            centered
+            className="bg-[#f9f9f9] rounded-t-2xl"
+            // 使用 tabBarStyle 设置整个 Tabs 导航栏的高度和行高
+            tabBarStyle={{
+              height: "40px",
+              lineHeight: "20px",
+              backgroundColor: "#f9f9f9",
+              marginBottom: '0',
+            }}
+          />
         </div>
       </div>
 

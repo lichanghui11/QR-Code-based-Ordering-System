@@ -4,7 +4,9 @@ import { observer } from "mobx-react";
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router";
-import { useInput } from "../hooks/hooks.ts";
+import { useInput } from "../hooks/hooks.tsx";
+import { Tabs, TabsProps } from 'antd'
+import _ from "lodash";
 
 class FoodManager {
   foods: Food[] = [];
@@ -19,6 +21,9 @@ class FoodManager {
   }
   deleteFood(idx: number) {
     this.foods.splice(idx, 1);
+  }
+  get grouped() {
+    return _.groupBy(this.foods, 'category')
   }
 }
 
@@ -39,16 +44,32 @@ const Foods = observer(() => {
     };
   }, []);
 
+
+  const tabProps: TabsProps['items'] = Object.entries(foodManager.grouped).map(entry => {
+    const [category, foods] = entry
+
+    return {
+      key: category,
+      label: category,
+      children: (
+        <ul className="columns-2 md:columns-3 gap-4  bg-[#f9f9f9]">
+          {foods.map((food, idx) => {
+            return <FoodItem food={food} idx={idx} foodManager={foodManager} />;
+          })}
+        </ul>
+      ),
+    };
+  })
+
+
+
   return (
     <>
       <div className="mx-2 text-center bg-[#fae158] py-2 rounded">
         <Link to="/home/add-food">添加菜品</Link>
       </div>
-      <ul className="columns-2 md:columns-3 gap-4 px-2 bg-[#f9f9f9]">
-        {foodManager.foods.map((food, idx) => {
-          return <FoodItem food={food} idx={idx} foodManager={foodManager} />;
-        })}
-      </ul>
+
+      <Tabs className="!px-4" items={tabProps}/>
     </>
   );
 });
@@ -120,7 +141,7 @@ const FoodItem: React.FC<FoodProp> = observer(
         <>
           <div className="bg-white rounded-lg shadow p-2 flex flex-col break-inside-avoid mb-[4px]">
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+              <span className="bg-[#fae158] mr-[4px] py-[2px] rounded">
                 名称：
               </span>
               <input
@@ -130,7 +151,7 @@ const FoodItem: React.FC<FoodProp> = observer(
               />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+              <span className="bg-[#fae158] mr-[4px] py-[2px] rounded">
                 价格：
               </span>
               <input
@@ -140,7 +161,7 @@ const FoodItem: React.FC<FoodProp> = observer(
               />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+              <span className="bg-[#fae158] mr-[4px] py-[2px] rounded">
                 描述：
               </span>
               <input
@@ -150,7 +171,7 @@ const FoodItem: React.FC<FoodProp> = observer(
               />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+              <span className="bg-[#fae158] mr-[4px] py-[2px] rounded">
                 分类：
               </span>
               <input
@@ -160,7 +181,7 @@ const FoodItem: React.FC<FoodProp> = observer(
               />{" "}
             </div>
             <div className="mb-[2px]">
-              <span className="bg-[#fae158] px-[2px] py-[2px] rounded">
+              <span className="bg-[#fae158] mr-[4px] py-[2px] rounded ">
                 上传图片
               </span>
               <input
@@ -172,13 +193,13 @@ const FoodItem: React.FC<FoodProp> = observer(
 
             <div className="mt-[5px]">
               <button
-                className="bg-[#aaf4a3] px-3 py-1 rounded mr-[15px]"
+                className="bg-[#aaf4a3] px-3 py-1 rounded mr-[15px] cursor-pointer hover:shadow-lg transition-all duration-150  active:outline active:outline-blue-500"
                 onClick={() => handleConfirm()}
               >
                 确认
               </button>
               <button
-                className="bg-[#f2514f] px-3 py-1 rounded"
+                className="bg-[#f2514f] px-3 py-1 rounded cursor-pointer hover:shadow-lg transition-all duration-150  active:outline active:outline-blue-500"
                 onClick={() => setEditing(false)}
               >
                 取消
@@ -217,17 +238,23 @@ const FoodItem: React.FC<FoodProp> = observer(
 
         <div className="flex justify-around text-[13px] rounded mt-2">
           {food.status === "on" && (
-            <button onClick={() => delist(idx)} className="bg-[#fae158] px-2">
+            <button
+              onClick={() => delist(idx)}
+              className="bg-[#fae158] px-2 cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
+            >
               下架
             </button>
           )}
           {food.status === "off" && (
-            <button onClick={() => list(idx)} className="bg-[#fae158] px-2">
+            <button
+              onClick={() => list(idx)}
+              className="bg-[#fae158] px-2 cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
+            >
               上架
             </button>
           )}
           <button
-            className="bg-[#fae158] px-2"
+            className="bg-[#fae158] px-2 cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
             onClick={() => setEditing(true)}
           >
             修改
@@ -235,7 +262,7 @@ const FoodItem: React.FC<FoodProp> = observer(
 
           <button
             onClick={() => handleDelete(food, idx)}
-            className="bg-[#fae158] px-2"
+            className="bg-[#fae158] px-2 cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
           >
             删除
           </button>

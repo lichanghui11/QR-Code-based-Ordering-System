@@ -11,7 +11,7 @@ type PrintButtonProps = {
 const PrintButton: React.FC<PrintButtonProps> = ({
   data,
   buttonText = "打印",
-  className = "cursor-pointer px-4 py-2 rounded-[20px] bg-[#fae158]",
+  className = "cursor-pointer px-4 py-2 bg-[#fae158] hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500",
 }) => {
   // 用 useRef 指向需要打印的 DOM 元素
   const contentRef = useRef<HTMLDivElement>(null);
@@ -31,20 +31,22 @@ const PrintButton: React.FC<PrintButtonProps> = ({
   });
 
   // 使用 PrettyData 格式化 JSON 数据，使输出更易读
-  const formattedData = JSON.stringify(data)
+  const formattedData = JSON.stringify(data);
 
   return (
     <>
-      <button onClick={() => {
-        console.log('print......')
-        handlePrint()
-        console.log('after print......')
-        console.log('mounted element: ', contentRef.current)
-      }} className={className}>
+      <button
+        onClick={() => {
+          console.log("print......");
+          handlePrint();
+          console.log("after print......");
+          console.log("mounted element: ", contentRef.current);
+        }}
+        className={className}
+      >
         {buttonText}
       </button>
-      <div style={{ position: 'absolute', left: '-999999px', top: '-99999px', }}>
-
+      <div style={{ position: "absolute", left: "-999999px", top: "-99999px" }}>
         <div ref={contentRef}>
           <pre>{formattedData}</pre>
         </div>

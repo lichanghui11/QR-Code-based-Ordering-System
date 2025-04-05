@@ -1,13 +1,11 @@
-import QRCode from "qrcode";
 import { type Desk } from "../types/types.ts";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router";
-import { useInput } from "../hooks/hooks.ts";
+import { useInput } from "../hooks/hooks.tsx";
 import { makeAutoObservable } from "mobx";
 import { observer } from "mobx-react";
-import { userAtom } from "../store/store.tsx";
-import { useAtom } from "jotai";
+import { QRCode } from 'antd'
 
 
 
@@ -27,25 +25,16 @@ class DeskManager {
 
 const Desks = observer( () => {
   const [deskManager] = useState(() => new DeskManager());
-  const [qrcodes, setQrcodes] = useState<string[]>([]);
-  const [user] = useAtom(userAtom);
+  // const [qrcodes, setQrcodes] = useState<string[]>([]);
 
 
   useEffect(() => {
     (async () => {
+
       const res = await axios.get("/api/restaurant/1/desk")
       console.log('the information of desks: ', res.data)
       deskManager.addDesk(...res.data);
 
-    const urls = await Promise.all(
-      deskManager.desks.map((desk) => {
-        return QRCode.toDataURL(
-          `http://192.168.3.11:5173/landing/r/${user.id}/d/${desk.id}`
-        );
-      })
-    )
-    setQrcodes(urls);
-    console.log('qr code urls: ', urls)
     })()
   }, []);
 
@@ -59,7 +48,7 @@ const Desks = observer( () => {
 
         <ul key={Math.random()} className="px-2 bg-[#f9f9f9] mt-2">
           {deskManager.desks.map((desk, idx) => {
-            return <DeskItem desk={desk} idx={idx} qrcodes={qrcodes} deskManager={deskManager} />;
+            return <DeskItem desk={desk} idx={idx} deskManager={deskManager} />;
           })}
         </ul>
       </div>
@@ -69,11 +58,10 @@ const Desks = observer( () => {
 type DeskProp = {
   desk: Desk, 
   idx: number, 
-  qrcodes: string[],
   deskManager:DeskManager,
 }
 
-const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
+const DeskItem = observer( ({ desk, idx, deskManager }: DeskProp) => {
   const name = useInput(desk.name);
   const capacity = useInput(String(desk.capacity));
   const [editing, setEditing] = useState(false);
@@ -96,32 +84,32 @@ const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
     deskManager.deleteDesk(idx)
   }
 
-  function printQRCode(qrSrc: string) {
-    // 打开一个新窗口
-    const printWindow = window.open("", "_blank", "width=700,height=700");
-    // 这里的 width=400,height=400 只是告诉浏览器：我希望弹出一个 400 像素宽、400 像素高的新窗口来显示二维码。当你点击（或自动执行）“打印”后，打印出的页面大小则取决于系统的打印设置、浏览器的打印选项和任何与打印相关的 CSS。
+  // function printQRCode(qrSrc: string) {
+  //   // 打开一个新窗口
+  //   const printWindow = window.open("", "_blank", "width=700,height=700");
+  //   // 这里的 width=400,height=400 只是告诉浏览器：我希望弹出一个 400 像素宽、400 像素高的新窗口来显示二维码。当你点击（或自动执行）“打印”后，打印出的页面大小则取决于系统的打印设置、浏览器的打印选项和任何与打印相关的 CSS。
 
-    // 在新窗口写入二维码图片HTML
-    // 这里嵌入一个简单的文档结构
-    printWindow?.document.write(`
-    <html>
-      <head>
-        <title>打印二维码</title>
-      </head>
-      <body style="margin: 0; padding: 0; text-align: center;">
-        <img src="${qrSrc}" alt="QR Code" />
-        <script>
-          window.onload = function() {
-            window.print();
-            // 也可以在打印结束后自动关闭：window.close();
-          };
-        </script>
-      </body>
-    </html>
-  `);
+  //   // 在新窗口写入二维码图片HTML
+  //   // 这里嵌入一个简单的文档结构
+  //   printWindow?.document.write(`
+  //   <html>
+  //     <head>
+  //       <title>打印二维码</title>
+  //     </head>
+  //     <body style="margin: 0; padding: 0; text-align: center;">
+  //       <img src="${qrSrc}" alt="QR Code" />
+  //       <script>
+  //         window.onload = function() {
+  //           window.print();
+  //           // 也可以在打印结束后自动关闭：window.close();
+  //         };
+  //       </script>
+  //     </body>
+  //   </html>
+  // `);
 
-    printWindow?.document.close();
-  }
+  //   printWindow?.document.close();
+  // }
 
 
   if (editing) {
@@ -167,19 +155,19 @@ const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
         <div className="flex gap-4 mt-auto text-[14px]">
           <button
             onClick={() => setEditing(true)}
-            className="bg-[#fae158] py-1 px-2 rounded"
+            className=" bg-[#fae158] py-px px-[5px]  cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
           >
             编辑
           </button>
           <button
             onClick={() => deleteDesk(desk, idx)}
-            className="bg-[#fae158] py-1 px-2 rounded"
+            className=" bg-[#fae158] py-px px-[5px]  cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
           >
             删除
           </button>
           <button
-            onClick={() => printQRCode(qrcodes[idx])}
-            className="bg-[#fae158] py-1 px-2 rounded"
+            // onClick={() => printQRCode(qrcodes[idx])}
+            className=" bg-[#fae158] py-px px-[5px]  cursor-pointer hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
           >
             打印二维码
           </button>
@@ -187,11 +175,14 @@ const DeskItem = observer( ({ desk, idx, qrcodes, deskManager }: DeskProp) => {
       </div>
 
       <div>
-        <img
-          data-url={`http://192.168.3.11:5173/landing/r/${desk.rid}/d/${desk.id}`}
-          src={qrcodes[idx]}
-          alt=""
-        />
+        <a
+          href={`http://192.168.3.11:5173/landing/r/${desk.rid}/d/${desk.id}`}
+          target="_blank"
+        >
+          <QRCode
+            value={`http://192.168.3.11:5173/landing/r/${desk.rid}/d/${desk.id}`}
+          />
+        </a>
       </div>
     </li>
   );

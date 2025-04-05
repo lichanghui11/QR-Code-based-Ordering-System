@@ -193,7 +193,7 @@ const Orders = observer(() => {
                       {order.status === "pending" && (
                         <button
                           onClick={() => confirmOrder(order.id, idx)}
-                          className="cursor-pointer px-4 py-2 rounded-[20px] bg-[#fae158]"
+                          className="cursor-pointer px-4 py-2 bg-[#fae158] hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
                         >
                           确认
                         </button>
@@ -201,14 +201,14 @@ const Orders = observer(() => {
                       {order.status === "confirmed" && (
                         <button
                           onClick={() => completeOrder(order.id, idx)}
-                          className="cursor-pointer px-4 py-2 rounded-[20px] bg-[#fae158]"
+                          className="cursor-pointer px-4 py-2 bg-[#fae158] hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
                         >
                           完成
                         </button>
                       )}
                       <button
                         onClick={() => deleteOrder(order.id, idx)}
-                        className="cursor-pointer px-4 py-2 rounded-[20px] bg-[#fae158]"
+                        className="cursor-pointer px-4 py-2 bg-[#fae158] hover:shadow-lg transition-all duration-150 rounded active:outline active:outline-blue-500"
                       >
                         删除
                       </button>
