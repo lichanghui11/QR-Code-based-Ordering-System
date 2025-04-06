@@ -55,18 +55,39 @@ export default function Landing() {
 
   return (
     <>
-      <div className="p-4">
-        <div className="text-center my-4 bg-[#fae158] rounded py-2"><span className='font-bold text-[18px]'>{loading ? 'Loading...' : data.title + ' : ' + data.name}</span></div>
+      <div className=" bg-[url('/background.jpg')] bg-cover bg-no-repeat h-[100vh] flex ">
+        <div className='w-full m-auto bg-white opacity-95 p-4 rounded '>
+
+        <div className="text-center my-4 bg-[#fae158] rounded py-2">
+          <span className="font-bold text-[18px]">
+            {loading ? "Loading..." : data.title + " : " + data.name}
+          </span>
+        </div>
         <div className="font-bold my-2">请选择用餐人数：</div>
         <div className="grid gap-3 grid-cols-6 ">
-          {
-            new Array(14).fill(0).map((_, idx) => {
-              return <span key={idx} className={clsx("cursor-pointer w-8 h-8 flex justify-center items-center bg-[#f9f9f9] rounded-full", {'bg-[#fae158] text-black': customCount === idx + 1})} onClick={() => setCustomCount(idx + 1)}>{idx + 1}</span>
-            })
-          }
+          {new Array(14).fill(0).map((_, idx) => {
+            return (
+              <span
+                key={idx}
+                className={clsx(
+                  "cursor-pointer w-8 h-8 flex justify-center items-center bg-[#f9f9f9] rounded-full",
+                  { "bg-[#fae158] text-black": customCount === idx + 1 }
+                )}
+                onClick={() => setCustomCount(idx + 1)}
+              >
+                {idx + 1}
+              </span>
+            );
+          })}
         </div>
-        <button onClick={() => startOrdring()} className="mt-4 px-2 py-1 rounded bg-[#fae158]">开始点餐</button>
+        <button
+          onClick={() => startOrdring()}
+          className="mt-4 px-2 py-1 rounded bg-[#fae158]"
+        >
+          开始点餐
+        </button>
       </div>
+        </div>
     </>
-  )
+  );
 }

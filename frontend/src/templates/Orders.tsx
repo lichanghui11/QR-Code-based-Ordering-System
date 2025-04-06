@@ -127,7 +127,7 @@ const Orders = observer(() => {
   }, [audioEnabled]);
 
   async function deleteOrder(id: number, idx: number) {
-    await axios.delete("/api/reataurant/1/order/" + id);
+    await axios.delete("/api/restaurant/1/order/" + id);
     ordersManager.deleteOrder(idx);
   }
 

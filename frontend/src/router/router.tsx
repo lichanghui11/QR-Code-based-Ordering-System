@@ -1,5 +1,5 @@
 import React from 'react'
-import { createBrowserRouter} from 'react-router-dom'
+import { createHashRouter } from "react-router-dom";
 import IndexView from '../templates/IndexView.tsx'
 import HomeView from '../templates/HomeView.tsx'
 import Orders from '../templates/Orders.tsx'
@@ -11,16 +11,17 @@ const AddFoodView = React.lazy(() => import('../templates/AddFoodView.tsx'))
 const AddDeskView = React.lazy(() => import('../templates/AddDeskView.tsx'))
 const Landing = React.lazy(() => import('../templates/Landing.tsx'))
 const OrderingPage = React.lazy(() => import('../templates/OrderingPage.tsx'))
+const OrderSuccessPage = React.lazy(() => import('../templates/OrderSuccessPage.tsx'))
 
 
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
-    path: '/', 
-    element: <IndexView />
+    path: "/",
+    element: <IndexView />,
   },
   {
-    path: '/home', 
+    path: "/home",
     element: <HomeView />,
     children: [
       {
@@ -68,7 +69,11 @@ const router = createBrowserRouter([
   },
   {
     path: '/place-order-success', 
-    element: <>下单成功</>
+    element: <OrderSuccessPage/>
+  },
+  {
+    path: '*',
+    element: <div>Page Not Found!</div>
   },
 
 

@@ -20,6 +20,7 @@ function CartIcon() {
 
 function getMenu(restaurantId: number | string): Promise<Food[]> {
   return axios.get("/api/menu/restaurant/" + restaurantId).then((res) => {
+    console.log('the menu of the restaurant: ', res.data)
     return res.data;
   });
 }
@@ -206,6 +207,11 @@ export default function OrderingPage() {
         }),
     };
 
+    if (Number(order.totalPrice) === 0) {
+      alert('您没有选择任何餐品哦！')
+      return
+    }
+
     await axios.post(
       `/api/restaurant/${deskInfo!.rid}/desk/${deskInfo!.id}/order`,
       order
@@ -232,7 +238,7 @@ export default function OrderingPage() {
         const element = document.getElementById(`anchor-${item}`)
         if (!element) continue
         const rect = element.getBoundingClientRect()
-        if (rect.top <= 160) {
+        if (rect.top <= 150) {
           currentKey = item
         } else { 
           break
@@ -304,12 +310,11 @@ function showFoodDetail(food: Food) {
   }
   return (
     <>
-      <div className="xbg-[#f9f9f9] pt-1 h-screen flex flex-col overflow-hidden bg-[url('/animal.png')] bg-cover bg-no-repeat w-screen ">
-        
-        <div className="bg-white opacity-93 rounded w-[90vw] mx-auto  px-2 h-[15vh] flex ">
+      <div className="xbg-[#f9f9f9] pt-1 h-screen flex flex-col overflow-hidden bg-[url('/background.jpg')] bg-cover bg-no-repeat w-screen ">
+        <div className="bg-white opacity-80 rounded w-[90vw] mx-auto  px-2 h-[15vh] flex ">
           <div className=" flex items-center justify-center rounded mr-2 ">
             <img
-              src="/animal.png"
+              src="/avatar.jpg"
               className="w-[70px] h-[70px] rounded"
               alt="图片占位符"
             />
@@ -334,9 +339,10 @@ function showFoodDetail(food: Food) {
             </div>
           </div>
         </div>
+
         <div
           data-name="左边分类 右边详情"
-          className=" flex flex-1 overflow-auto  rounded-t-[16px] shadow"
+          className=" flex flex-1 overflow-auto  rounded-t-[16px] shadow opacity-97"
         >
           <div className="overflow-auto">
             <SideBar
@@ -346,6 +352,7 @@ function showFoodDetail(food: Food) {
                   behavior: "smooth",
                 });
               }}
+              className=""
             >
               {Object.keys(groupedMenu).map((category) => {
                 return <SideBar.Item title={category} key={category} />;
@@ -355,7 +362,7 @@ function showFoodDetail(food: Food) {
 
           <div
             data-name="菜品循环"
-            className=" p-4 rounded bg-white xpb-[40px] grow overflow-auto "
+            className="px-[4px] rounded bg-white xpb-[40px] grow overflow-auto "
             ref={mainElementRef}
             onScroll={() => handleScroll()}
           >
@@ -363,17 +370,16 @@ function showFoodDetail(food: Food) {
               const [key, foodItem] = entry;
               return (
                 <div key={i} className="">
-                  <h1 className="text-[20px] font-bold sticky top-[-16px] bg-white my-0 z-[99] ">
+                  <h1 className="text-[20px] font-bold sticky bg-[#fae158] my-0 z-[99] rounded  "id={`anchor-${key}`}>
                     {key}
                   </h1>
-                  <h1 id={`anchor-${key}`} className="mb-[36px] "></h1>
                   {foodItem.map((food) => {
                     const id = menu!.findIndex((it) => it.id === food.id);
                     return (
                       <div key={food.id} className="mb-5 ">
-                        <div className="flex justify-between">
+                        <div className="flex gap-[5px]">
                           <img
-                            className="w-30 rounded "
+                            className="w-20 rounded "
                             src={`/upload/${food.img}`}
                             onClick={() => showFoodDetail(food)}
                           />
@@ -506,7 +512,7 @@ const Counter = ({ min, max, value, step, onChange }: CounterProp) => {
       >
         <span
           className={clsx(
-            "absolute inset-0 before:content-[''] before:block before:w-3 before:h-[2px]  before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2",
+            "absolute inset-0 before:content-[''] before:block before:w-3 before:h-[2px]  before:absolute before:top-1/2 before:left-1/2 before:-translate-x-1/2 before:-translate-y-1/2 before:z-50",
             { "before:bg-black": value !== min }
           )}
         ></span>

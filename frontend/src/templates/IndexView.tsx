@@ -4,8 +4,6 @@ import { Link } from "react-router"
 export default function HomeView() {
 
 
-
-
   return (
     <div className="rounded-2xl mx-4 mt-[20vh] bg-[#fae158] text-center py-[50px]">
         <div>

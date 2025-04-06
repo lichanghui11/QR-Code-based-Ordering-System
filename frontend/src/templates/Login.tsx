@@ -34,7 +34,7 @@ const Login: React.FC = () => {
        *   title: 'KFC', //title为餐厅名称
        * }
        */
-      // console.log('登录返回的结果: ', res.data)
+      console.log('登录返回的结果: ', res.data)
 
       setUser(() => res.data)
       setIsLogin(true)
